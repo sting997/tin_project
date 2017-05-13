@@ -2,48 +2,52 @@
 // Created by monspid on 13.05.17.
 //
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <cstdlib>
-#include <cstring>
+#include <unistd.h>
 
-#define BUFLEN 512
-#define NPACK 10
-#define PORT 9930
 
-void diep(char *s)
+int main()
 {
-    perror(s);
-    exit(1);
-}
+    int sock, length;
+    struct sockaddr_in name;
+    char buf[1024];
 
-int main(void)
-{
-    struct sockaddr_in si_me, si_other;
-    int s, i, slen=sizeof(si_other);
-    char buf[BUFLEN];
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-        diep((char *) "socket");
-
-    memset((char *) &si_me, 0, sizeof(si_me));
-    si_me.sin_family = AF_INET;
-    si_me.sin_port = htons(PORT);
-    si_me.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (bind(s, (struct sockaddr *) &si_me, sizeof(si_me))==-1)
-        diep((char *) "bind");
-
-    for (i=0; i<NPACK; i++) {
-        if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, (socklen_t *) & slen) == -1)
-        diep((char *) "recvfrom()");
-        printf("Received packet from %s:%d\nData: %s\n\n",
-             inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
+    if (sock == -1) {
+        perror("opening datagram socket");
+        exit(1);
     }
 
-    close(s);
-    return 0;
+    /* Create name with wildcards. */
+    name.sin_family = AF_INET;
+    name.sin_addr.s_addr = INADDR_ANY;
+    name.sin_port = htons(9000);
+
+    if (bind(sock,(struct sockaddr *)&name, sizeof name) == -1) {
+        perror("binding datagram socket");
+        exit(1);
+    }
+
+    /* Wydrukuj na konsoli numer portu */
+    length = sizeof(name);
+
+    if (getsockname(sock,(struct sockaddr *) &name, (socklen_t *) &length)
+        == -1) {
+        perror("getting socket name");
+        exit(1);
+    }
+
+    printf("Socket port #%d\n", ntohs(name.sin_port));
+
+    /* Read from the socket. */
+    if ( read(sock, buf, 1024) == -1 )
+        perror("receiving datagram packet");
+    printf("-->%s\n", buf);
+    close(sock);
+    exit(0);
 }

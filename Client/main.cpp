@@ -1,49 +1,45 @@
-//
-// Created by monspid on 13.05.17.
-//
-
-#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <cstdlib>
+#include <unistd.h>
 #include <cstring>
 
-#define BUFLEN 512
-#define NPACK 10
-#define PORT 9930
-
-#define SRV_IP "192.168.0.23"
-
-void diep(char *s)
+#define DATA "The sea is calm, the tide is full . . ."
+#define URL "localhost"
+#define PORT 9000
+int main(int argc, char *argv[])
 {
-    perror(s);
-    exit(1);
-}
+    int sock;
+    struct sockaddr_in name;
+    struct hostent *hp;
 
-int main(void)
-{
-    struct sockaddr_in si_other;
-    int s, i;
-    unsigned slen =sizeof(si_other);
-    char buf[BUFLEN];
-    if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
-        diep((char *) "socket");
+    /* Create socket on which to send. */
+    sock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    memset((char *) &si_other, 0, sizeof(si_other));
-    si_other.sin_family = AF_INET;
-    si_other.sin_port = htons(PORT);
-    if (inet_aton(SRV_IP, &si_other.sin_addr)==0) {
-        fprintf(stderr, "inet_aton() failed\n");
+    if (sock == -1) {
+        perror("opening datagram socket");
         exit(1);
     }
 
-    for (i=0; i<NPACK; i++) {
-        printf("Sending packet %d\n", i);
-        sprintf(buf, "This is packet %d\n", i);
-        if (sendto(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, slen)==-1)
-            diep((char *) "sendto()");
+    hp = gethostbyname(URL);
+
+    if (hp == (struct hostent *) 0) {
+        fprintf(stderr, "%s: unknown host\n", URL);
+        exit(2);
     }
 
-    close(s);
-    return 0;
+    memcpy((char *) &name.sin_addr, hp->h_addr, (size_t) hp->h_length);
+
+    name.sin_family = AF_INET;
+    name.sin_port = htons(PORT);
+
+    /* Send message. */
+    if (sendto(sock, DATA, sizeof DATA ,0, (struct sockaddr *) &name,sizeof name) == -1)
+        perror("sending datagram message");
+
+    close(sock);
+    exit(0);
 }

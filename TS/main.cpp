@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include "../protocol_codes.h"
 
-
 void returnIP( int sock ) {
     int n;
     socklen_t len;
@@ -75,12 +74,12 @@ int main()
         exit(1);
     }
 
-    printf("Socket port #%d\n", ntohs(name.sin_port));
+    printf("TS listens on port %d\n", ntohs(name.sin_port));
 
     FD_ZERO(&rset);
     maxfdp1 = udpfd + 1;
 
-    while(1) {
+    while(true) {
         FD_SET(udpfd, &rset);
         if ((nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) 
             perror("Something bad happened with select");
@@ -88,5 +87,6 @@ int main()
         if (FD_ISSET(udpfd, &rset)) 
             returnIP(udpfd);
     }
+
     exit(0);
 }

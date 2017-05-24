@@ -12,6 +12,30 @@
 #include <unistd.h>
 #include "../protocol_codes.h"
 
+void returnIP( int sock ) {
+    ssize_t n;
+    socklen_t len;
+    char buf[1024];
+    struct sockaddr_in remote;
+
+    /* need to know how big address struct is, len must be set before the call to recvfrom!!! */
+    len = sizeof(remote);
+
+    /* read a datagram from the socket (put result in bufin) */
+    n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
+
+    /* print out the address of the sender */
+    printf("TS got a datagram from %s port %d\n",
+           inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
+
+    if (n < 0) {
+        perror("Error receiving data");
+    } else {
+        printf("TS got %d bytes\n", (int) n);
+        /* Got something, just send it back */
+        sendto(sock, buf, (size_t) n, 0,(struct sockaddr *) &remote, len);
+    }
+}
 
 void returnIP( int sock ) {
     int n;
@@ -75,12 +99,12 @@ int main()
         exit(1);
     }
 
-    printf("Socket port #%d\n", ntohs(name.sin_port));
+    printf("TS listens on port %d\n", ntohs(name.sin_port));
 
     FD_ZERO(&rset);
     maxfdp1 = udpfd + 1;
 
-    while(1) {
+    while(true) {
         FD_SET(udpfd, &rset);
         if ((nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) 
             perror("Something bad happened with select");
@@ -88,5 +112,6 @@ int main()
         if (FD_ISSET(udpfd, &rset)) 
             returnIP(udpfd);
     }
+
     exit(0);
 }

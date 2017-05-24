@@ -10,6 +10,8 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
+#include "../protocol_codes.h"
+
 
 void returnIP( int sock ) {
     int n;
@@ -31,13 +33,14 @@ void returnIP( int sock ) {
 
     if (n<0) {
         perror("Error receiving data");
-    } else {
-        printf("GOT %d BYTES\n",n);
-        /* Got something, just send it back */
-        sendto(sock,buf,n,0,(struct sockaddr *) &remote, len);
-    }
+    } 
+	else 
+        if(buf[0] == TS_REQ_IP){
+			char msg[1];
+			msg[0] = TS_IP;
+			sendto(sock,msg,n,0,(struct sockaddr *) &remote, len);
+		}
 }
-
 
 int main()
 {
@@ -64,11 +67,10 @@ int main()
         exit(1);
     }
 
-    /* Wydrukuj na konsoli numer portu */
+    //print port number on console
     len = sizeof(name);
 
-    if (getsockname(udpfd,(struct sockaddr *) &name, &len)
-        == -1) {
+    if (getsockname(udpfd,(struct sockaddr *) &name, &len) == -1) {
         perror("getting socket name");
         exit(1);
     }
@@ -80,16 +82,11 @@ int main()
 
     while(1) {
         FD_SET(udpfd, &rset);
-        if ( (nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) {
-            if (errno == EINTR)
-                continue;
-            else
-                perror("Some shit happened with select");
-        }
-
-        if (FD_ISSET(udpfd, &rset)) {
+        if ((nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) 
+            perror("Something bad happened with select");
+        
+        if (FD_ISSET(udpfd, &rset)) 
             returnIP(udpfd);
-        }
     }
     exit(0);
 }

@@ -55,6 +55,36 @@ int main(int argc, char *argv[])
 		}	
 	}
 	
+	/* Create socket on which to send. */
+    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if (sock == -1) {
+        perror("opening datagram socket");
+        exit(1);
+    }
+
+    memset(&broadcastAddr, 0, sizeof(broadcastAddr));
+    broadcastAddr.sin_family = AF_INET;
+    broadcastAddr.sin_addr.s_addr = remote.sin_addr.s_addr;
+    broadcastAddr.sin_port = htons(8000);
+
+	//create simple request for server
+	req[0] = TS_REQ_TICKET;
+    /* Send message. */
+    if (sendto(sock, req, sizeof req ,0, (struct sockaddr *) &broadcastAddr,sizeof broadcastAddr) == -1)
+        perror("sending datagram message");
+	
+	n = recvfrom(sock,buf,1024,0,(struct sockaddr *) &remote, &len);
+	if (n<0) 
+		perror("Error receiving data");
+	else {
+		if(buf[0] == TS_GRANTED){
+			printf("I just received my ticket, whoooaaa!\n");
+		}
+		else
+			printf("Received roaming package, didn't want it though!\n");
+		}	
+	
     close(sock);
     exit(0);
 }

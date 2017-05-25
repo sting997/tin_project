@@ -7,9 +7,16 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include "../protocol_codes.h"
+#include "../TS/RequestManager.h"
 
 #define DATA "The sea is calm, the tide is full . . ."
 #define PORT 9000
+
+
+//TODO
+//refactor this code, divide into functions
+
+
 int main(int argc, char *argv[])
 {
     int sock;
@@ -33,8 +40,8 @@ int main(int argc, char *argv[])
 
 	//create simple request for server
 	char req[1];
-	req[0] = TS_REQ_IP;
-    /* Send message. */
+	RequestManager::createRequest(req, TS_REQ_IP);
+	/* Send message. */
     if (sendto(sock, req, sizeof req ,0, (struct sockaddr *) &broadcastAddr,sizeof broadcastAddr) == -1)
         perror("sending datagram message");
 
@@ -69,7 +76,7 @@ int main(int argc, char *argv[])
     broadcastAddr.sin_port = htons(8000);
 
 	//create simple request for server
-	req[0] = TS_REQ_TICKET;
+	RequestManager::createRequest(req, TS_REQ_TICKET);
     /* Send message. */
     if (sendto(sock, req, sizeof req ,0, (struct sockaddr *) &broadcastAddr,sizeof broadcastAddr) == -1)
         perror("sending datagram message");
@@ -79,11 +86,11 @@ int main(int argc, char *argv[])
 		perror("Error receiving data");
 	else {
 		if(buf[0] == TS_GRANTED){
-			printf("I just received my ticket, whoooaaa!\n");
+			printf("I just received my ticket, whoooaaa!\n%s\n", buf);
 		}
 		else
 			printf("Received roaming package, didn't want it though!\n");
-		}	
+	}	
 	
     close(sock);
     exit(0);

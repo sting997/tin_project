@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include "../protocol_codes.h"
+#include "RequestManager.h"
 
 void returnIP(int sock);
 void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name);
@@ -19,9 +20,9 @@ void returnTicket(int sock);
 
 int main()
 {
-    int udpfd, udpfd2, nready, maxfdp1, maxfdp2;
-    fd_set rset, rset2;
-    struct sockaddr_in name, name2;
+    int udpfd, udpfd2, nready, maxfdp1;
+    fd_set rset;
+    struct sockaddr_in name;
     char buf[1024];
 
     fillSockaddr_in(name, AF_INET, INADDR_ANY, 9000);
@@ -69,7 +70,10 @@ void returnIP( int sock ) {
         perror("Error receiving data");
     } 
 	else 
-        if(buf[0] == TS_REQ_IP){
+        if(RequestManager::getRequestCode(buf) == TS_REQ_IP){
+			//todo
+			//implement a method to make the proper message
+			//and use it instead od the lines below
 			char msg[1];
 			msg[0] = TS_IP;
 			sendto(sock,msg,n,0,(struct sockaddr *) &remote, len);
@@ -124,11 +128,14 @@ void returnTicket(int sock){
         perror("Error receiving data");
     } 
 	else 
-        if(buf[0] == TS_REQ_TICKET){
+        if(RequestManager::getRequestCode(buf) == TS_REQ_TICKET){
+			//todo 
+			//analyse request
+			//reject or grant ticket
+			//if granted generate ticket
+			//encrypt ticket
 			char msg[1];
 			msg[0] = TS_GRANTED;
 			sendto(sock,msg,n,0,(struct sockaddr *) &remote, len);
 		}
 }
-
-

@@ -3,3 +3,6 @@
 //
 
 #include "Ticket.h"
+void Ticket::createTicket(char *ticketBuffer, char * privilegeInfo){
+	memcpy(ticketBuffer, privilegeInfo, sizeof(privilegeInfo)+1);
+}

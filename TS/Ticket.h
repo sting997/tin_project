@@ -4,10 +4,11 @@
 
 #ifndef TIN_TICKET_H
 #define TIN_TICKET_H
-
+#include <cstring>
 
 class Ticket {
-
+public:
+	static void createTicket(char *ticketBuffer, char * privilegeInfo);
 };
 
 

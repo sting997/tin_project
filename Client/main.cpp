@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		perror("Error receiving data");
 	else {
 		if(buf[0] == TS_GRANTED){
-			printf("I just received my ticket, whoooaaa!\n%s\n", buf);
+			printf("I just received my ticket, whoooaaa!\n", buf);
 		}
 		else
 			printf("Received roaming package, didn't want it though!\n");

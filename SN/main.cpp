@@ -46,8 +46,8 @@ int main()
     maxfdp1 = maxFd1(tcpfd, tcpfd2, udpfd, udpfd2);
 
     while(true) {
-        FD_SET(tcpfd, &rset);
-        FD_SET(tcpfd2, &rset);
+       /* FD_SET(tcpfd, &rset);
+        FD_SET(tcpfd2, &rset);*/
         FD_SET(udpfd, &rset);
         FD_SET(udpfd2, &rset);
 

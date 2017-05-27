@@ -13,13 +13,14 @@
 
 #define DATA "The sea is calm, the tide is full . . ."
 #define PORT 9000
+#define PORT2 8000
 #define UDP_ECHO_PORT 6000
 #define UDP_TIME_PORT 6001
 
 
-//TODO
-//refactor this code, divide into functions
 void communicationTest(int port);
+void setTimeout(int socket, time_t tv_sec, long int tv_usec);
+void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s_addr, unsigned short sin_port);
 
 int main(int argc, char *argv[]) {
     int sock;
@@ -32,14 +33,14 @@ int main(int argc, char *argv[]) {
     sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (sock == -1) {
-        perror("opening datagram socket");
+        puts("opening datagram socket");
         exit(1);
     }
+	
+	setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    broadcastAddr.sin_family = AF_INET;
-    broadcastAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    broadcastAddr.sin_port = htons(PORT);
+	fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), PORT);
 
     //create simple request for server
     char req[2];
@@ -47,15 +48,17 @@ int main(int argc, char *argv[]) {
     req[1] = 0;
     /* Send message. */
     if (sendto(sock, req, sizeof req, 0, (struct sockaddr *) &broadcastAddr, sizeof broadcastAddr) == -1)
-        perror("sending datagram message");
+        puts("sending datagram message");
     //receive package from server
     socklen_t len = sizeof(remote);
     int n;
     while (true) {
         bzero(buf, 1024);
         n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
-        if (n < 0)
-            perror("Error receiving data");
+        if (n < 0){
+            puts("Error: receiving data from TS");
+			break;
+		}
         else {
             if (buf[0] == TS_IP) {
                 printf("Received package from TS: %s\n", inet_ntoa(remote.sin_addr));
@@ -69,14 +72,13 @@ int main(int argc, char *argv[]) {
     sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (sock == -1) {
-        perror("opening datagram socket");
+        puts("opening datagram socket");
         exit(1);
     }
+	setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    broadcastAddr.sin_family = AF_INET;
-    broadcastAddr.sin_addr.s_addr = remote.sin_addr.s_addr;
-    broadcastAddr.sin_port = htons(8000);
+	fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, PORT2);
 
     //create simple request for server
     RequestManager::createRequest(req, TS_REQ_TICKET);
@@ -88,11 +90,11 @@ int main(int argc, char *argv[]) {
 
     /* Send message. */
     if (sendto(sock, temp, sizeof temp, 0, (struct sockaddr *) &broadcastAddr, sizeof broadcastAddr) == -1)
-        perror("sending datagram message");
+        puts("sending datagram message");
 	
 	n = recvfrom(sock,buf,1024,0,(struct sockaddr *) &remote, &len);
 	if (n<0) 
-		perror("Error receiving data");
+		puts("Error: receiving data from TS");
 	else {
 		if(buf[0] == TS_GRANTED){
 			printf("I just received my ticket, whoooaaa!\n", buf);
@@ -118,27 +120,26 @@ void communicationTest(int port) {
     sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (sock == -1) {
-        perror("opening datagram socket");
+        puts("opening datagram socket");
         exit(1);
     }
+	setTimeout(sock, 3, 0);
 
     memset(&service, 0, sizeof(service));
-    service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    service.sin_port = htons(port);
+	fillSockaddr_in(service, AF_INET, inet_addr("127.0.0.1"), port);
 
     bzero(buf, 1024);
     memcpy(buf + 1, "Echo: Lorem Ipsum", sizeof("Echo: Lorem Ipsum"));
 
     if (sendto(sock, buf, sizeof buf, 0, (struct sockaddr *) &service, sizeof service) == -1)
-        perror("sending datagram message");
+        puts("sending datagram message");
     //receive package from server
     socklen_t len = sizeof(remote);
     int n;
 
     n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
     if (n < 0)
-        perror("Error receiving data");
+        puts("Error: receiving data from Sn");
     else {
         if (buf[0] == SERVICE_GRANTED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
@@ -154,4 +155,17 @@ void communicationTest(int port) {
     }
 
     close(sock);
+}
+
+void setTimeout(int socket, time_t tv_sec, long int tv_usec){
+	struct timeval tv;
+	tv.tv_sec = tv_sec;
+	tv.tv_usec = tv_usec;
+	setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv,sizeof(struct timeval));
+}
+
+void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s_addr, unsigned short sin_port) {
+    name.sin_family = sin_family;
+    name.sin_addr.s_addr = s_addr;
+    name.sin_port = htons(sin_port);
 }

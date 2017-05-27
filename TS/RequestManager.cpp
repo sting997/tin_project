@@ -11,6 +11,6 @@ char RequestManager::getRequestCode(char *message){
 
 void RequestManager::createRequest(char * requestBuffer, char requestCode){
 	requestBuffer[0] = requestCode;
-	if (requestCode = TS_GRANTED)
+	if (requestCode == TS_GRANTED)
 		Ticket::createTicket(&requestBuffer[2], "Tyket");
 }

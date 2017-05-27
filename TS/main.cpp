@@ -9,7 +9,6 @@
 #include <cstdlib>
 #include <arpa/inet.h>
 #include <errno.h>
-#include <unistd.h>
 #include "../protocol_codes.h"
 #include "RequestManager.h"
 

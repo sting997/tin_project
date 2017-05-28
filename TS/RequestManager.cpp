@@ -23,8 +23,13 @@ void RequestManager::requestTicket() {
         std::string auth_data = getAuthData(buf);
 
         int status = privilege_manager.getPrivilegeInfo(inet_ntoa(remote.sin_addr), auth_data);
-
-        std::string message = status == 3 ? "ticket" : std::to_string(status);
+		std::string message;
+		if (status == 3){
+			Ticket ticket;
+			message = ticket.createTicket("oto jest ticket");//change the argument to a string based on privilege info
+		}
+        else
+			message = std::to_string(status);
 
         sendMessage(sock, TS_GRANTED, message);
     }
@@ -37,7 +42,7 @@ bool RequestManager::shouldPerform(char code) {
 void RequestManager::sendMessage(int sock, char code, std::string message) {
     std::string response = code + message;
 
-    sendto(sock, response.c_str(), n, 0, (struct sockaddr *) &remote, len);
+    sendto(sock, response.c_str(), sizeof(response.c_str()), 0, (struct sockaddr *) &remote, len);
 }
 
 std::string RequestManager::getAuthData(std::string buf) {

@@ -14,6 +14,7 @@
 #include <ctime>
 #include "../protocol_codes.h"
 #include "TicketCorrectnessTester.h"
+#include "TicketDecryptor.h"
 
 #define LISTENQ 5
 #define MAXLINE 1024
@@ -140,6 +141,9 @@ void UDPEcho(int &udpfd, char* buf) {
                 break;
         }
     }
+	TicketDecryptor td;
+	//std::string decrypted = td.decryptTicket(buf+1);
+	//memcpy(buf+1, decrypted.c_str(), sizeof decrypted.c_str());
     sendto(udpfd, buf, n, 0, (struct sockaddr *) &cliaddr, len);
 }
 

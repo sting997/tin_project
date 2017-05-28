@@ -5,10 +5,17 @@
 #ifndef TIN_TICKET_H
 #define TIN_TICKET_H
 #include <cstring>
+#include "cryptopp/modes.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/filters.h"
 
 class Ticket {
+	byte key[ CryptoPP::AES::DEFAULT_KEYLENGTH ];
+	byte iv[ CryptoPP::AES::BLOCKSIZE ];
+
 public:
-	static void createTicket(char *ticketBuffer, char * privilegeInfo);
+	Ticket();
+	std::string createTicket(std::string privilegeInfo);
 };
 
 

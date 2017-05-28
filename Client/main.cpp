@@ -155,6 +155,7 @@ void udpTest(int port) {
             if (port == UDP_TIME_PORT) {
                 printf("%d", strlen(buf));
                 printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
+			}
             else
                 printf("%s\n", (buf + 1));
         }

@@ -15,6 +15,9 @@
 #include <unistd.h>
 #include <string>
 #include "../protocol_codes.h"
+#include "TicketCorrectnessTester.h"
+#include "TicketDecryptor.h"
+#include "config.h"
 #include "RequestManager.h"
 
 #define LISTENQ 5

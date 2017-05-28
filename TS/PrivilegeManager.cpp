@@ -25,9 +25,8 @@ std::vector<std::string> PrivilegeManager::getSplitAuthData(std::string auth_dat
 
     std::stringstream ss(auth_data);
     std::string token;
-    char delimiter = ';';
 
-    while (std::getline(ss, token, delimiter))
+    while (std::getline(ss, token, DELIMITER))
         split_auth_data.push_back(token);
 
     return split_auth_data;
@@ -75,14 +74,14 @@ int PrivilegeManager::getStatusFromDB(std::string IP, std::vector<std::string> s
 
 bool PrivilegeManager::isUserInDB(std::string username, std::string password) {
     std::string file_name = "user.txt";
-    std::string line = username + ";" + password;
+    std::string line = username + DELIMITER + password;
 
     return doesLineExist(file_name, line);
 }
 
 bool PrivilegeManager::canIPPerformService(std::string IP, std::string server_name, std::string service_name) {
     std::string file_name = "service.txt";
-    std::string line = IP + ";" + server_name + ";" + service_name;
+    std::string line = IP + DELIMITER + server_name + DELIMITER + service_name;
 
     return doesLineExist(file_name, line);
 }

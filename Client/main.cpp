@@ -11,23 +11,12 @@
 #include "../protocol_codes.h"
 #include "../SN/TicketDecryptor.h"//only for debug
 
+#include "RequestManager.h"
+#include "config.h"
 
-#define PORT 9000
-#define PORT2 8000
-#define UDP_ECHO_PORT 6000
-#define UDP_TIME_PORT 6001
-#define TCP_ECHO_PORT 5000
-#define TCP_TIME_PORT 5001
-
-
-
-int checkIfEnd(char const* buf, char const* seq);
 void setTimeout(int socket, time_t tv_sec, long int tv_usec);
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 void udpTest(int port);
-void tcpEchoTest();
-void tcpTimeTest();
-int startTcpCon(char const* ip, int port);
 
 int main(int argc, char *argv[]) {
     int sock;
@@ -47,7 +36,7 @@ int main(int argc, char *argv[]) {
     setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), PORT);
+    fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), PORT_IP_REQUEST);
 
     //create simple request for server
     char req[2];
@@ -84,7 +73,7 @@ int main(int argc, char *argv[]) {
     setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, PORT2);
+    fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, PORT_TICKET_REQUEST);
 
     //create simple request for server
     req[0] = TS_REQ_TICKET;
@@ -108,11 +97,12 @@ int main(int argc, char *argv[]) {
             printf("Received roaming package, didn't want it though!\n");
     }
 
-    udpTest(UDP_TIME_PORT);
-    udpTest(UDP_ECHO_PORT);
+    udpTest(PORT_UDP_TIME);
+    udpTest(PORT_UDP_ECHO);
 
-    tcpTimeTest();
-    tcpEchoTest();
+    RequestManager requestManager = RequestManager();
+    requestManager.tcpTimeTest();
+    requestManager.tcpEchoTest();
 
 
     close(sock);
@@ -152,9 +142,9 @@ void udpTest(int port) {
     else {
         if (buf[0] == SERVICE_GRANTED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            if (port == UDP_TIME_PORT) {
+            if (port == PORT_UDP_TIME) {
                 printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
-			}
+            }
             else
                 printf("%s\n", (buf + 1));
         }
@@ -180,103 +170,4 @@ void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t
     name.sin_family = sin_family;
     name.sin_addr.s_addr = s_addr;
     name.sin_port = htons(sin_port);
-}
-
-void tcpEchoTest() {
-    int sock;
-    sock = startTcpCon("127.0.0.1", TCP_ECHO_PORT);
-    char buf[1024];
-    int rval, endpos;
-
-    bzero(buf, 1024);
-
-    //keep communicating with server
-    while(true) {
-        printf("To ECHO: ");
-        fgets(buf, 1024, stdin);
-
-        //Send some data
-        if(send(sock , buf , strlen(buf) , 0) < 0) {
-            perror("Send failed:");
-            exit(1);
-        }
-        endpos= checkIfEnd(buf, "END");
-        if(endpos != std::string::npos)
-            break;
-    }
-    while(true) {
-        if((rval = read(sock , buf , 1024)) == -1) {
-            perror("Read failed:");
-            exit(1);
-        }
-        if(rval == 0) {
-            printf("Ending connection.\n");
-            break;
-        }
-        else
-            printf("%s\n",buf);
-    }
-    close(sock);
-}
-
-void tcpTimeTest() {
-    int sock;
-    sock = startTcpCon("127.0.0.1", TCP_TIME_PORT);
-    char buf[1024];
-    int rval;
-
-    bzero(buf, 1024);
-
-    memcpy(buf, "TCP TIME PLS", sizeof("TCP TIME PLS"));
-
-    if(send(sock , buf , strlen(buf) , 0) < 0) {
-        perror("Send failed:");
-        exit(1);
-    }
-
-    bzero(buf, 1024);
-    if((rval = read(sock , buf , 1024)) == -1) {
-        perror("Read failed:");
-        exit(1);
-    }
-    if(rval == 0) {
-        printf("Service server disconnected.\n");
-    }
-    else {
-        printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
-    }
-    close(sock);
-}
-
-int startTcpCon(char const* ip, int port) {
-    int sock;
-    struct sockaddr_in service;
-
-    /* Create socket on which to send. */
-    sock = socket(PF_INET, SOCK_STREAM, 0);
-
-    if (sock == -1) {
-        perror("Opening datagram socket:");
-        exit(1);
-    }
-
-    memset(&service, 0, sizeof(service));
-    service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr(ip);
-    service.sin_port = htons(port);
-
-    //Connect to remote server
-    if (connect(sock , (struct sockaddr *)&service , sizeof(service)) < 0) {
-        perror("Connect failed:");
-        return -1;
-    }
-    return sock;
-}
-
-int checkIfEnd(char const* buf, char const* seq) {
-    std::string bufs(buf);
-    std::string subs(seq);
-
-    auto pos = bufs.find(seq);
-    return pos;
 }

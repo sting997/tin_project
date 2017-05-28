@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <sstream>
 #include <regex>
+#include "config.h"
 
 class PrivilegeManager {
     std::vector<std::string> getSplitAuthData(std::string auth_data);

@@ -41,7 +41,7 @@ bool RequestManager::shouldPerform(char code) {
 void RequestManager::sendMessage(int sock, char code, std::string message) {
     std::string response = code + message;
 
-    sendto(sock, response.c_str(), sizeof(response.c_str()), 0, (struct sockaddr *) &remote, len);
+    sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &remote, len);
 }
 
 std::string RequestManager::getAuthData(std::string buf) {

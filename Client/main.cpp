@@ -18,7 +18,7 @@ void setTimeout(int socket, time_t tv_sec, long int tv_usec);
 
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
-void udpTest(int port);
+void udpTest(unsigned short port);
 
 int main(int argc, char *argv[]) {
     int sock;
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     exit(0);
 }
 
-void udpTest(int port) {
+void udpTest(unsigned short port) {
     int sock;
     char buf[1024];
     struct sockaddr_in remote;

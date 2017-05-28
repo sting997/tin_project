@@ -103,3 +103,4 @@ int RequestManager::checkIfEnd(char const *buf, char const *seq) {
 
     return bufs.find(seq);
 }
+

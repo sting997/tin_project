@@ -153,7 +153,6 @@ void udpTest(int port) {
         if (buf[0] == SERVICE_GRANTED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
             if (port == UDP_TIME_PORT) {
-                printf("%d", strlen(buf));
                 printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
 			}
             else
@@ -244,7 +243,6 @@ void tcpTimeTest() {
         printf("Service server disconnected.\n");
     }
     else {
-        fprintf(stderr, "%d", strlen(buf));
         printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
     }
     close(sock);

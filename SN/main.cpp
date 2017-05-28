@@ -85,7 +85,8 @@ void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s
     name.sin_port = htons(sin_port);
 }
 
-void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name){
+void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name) {
+    int enable = 1;
     socklen_t len;
     fd = socket(domain, type, protocol);
 
@@ -93,7 +94,10 @@ void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_
         perror("opening socket");
         exit(1);
     }
-
+    if ((type == SOCK_STREAM) && (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)){
+        perror("setsockopt(SO_REUSEADDR) failed");
+        exit(1);
+    }
     if (bind(fd,(struct sockaddr *)&name, sizeof name) == -1) {
         perror("binding socket");
         exit(1);

@@ -34,7 +34,7 @@ int main() {
     fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_UDP_TIME);
     prepareSocket(udpTime, AF_INET, SOCK_DGRAM, 0, servaddr);
 
-    maxfdp1 = maxFd(tcpEcho, tcpTime, udpEcho, udpTime) + 1;
+    maxfdp1 = std::max({tcpEcho, tcpTime, udpEcho, udpTime}) + 1;
 
     while (true) {
         FD_ZERO(&rset);

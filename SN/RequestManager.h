@@ -21,35 +21,33 @@
 
 class RequestManager {
     int sock, connfd;
+    int type;
     char buf[BUFFER_SIZE];
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
-    ssize_t n;
 
-    bool shouldPerform(char code);
+    void TCPEcho();
 
-    void sendMessage(int sock, char code, std::string message);
+    void TCPTime();
 
-    std::string getAuthData(std::string buf);
+    void UDPEcho();
 
-    char getRequestCode(char *message);
+    void UDPTime();
 
     void acceptConnection();
 
     void prepareRefuseBuffer(int errNum);
 
-    int checkIfEnd(char const *seq);
+    unsigned long checkIfEnd(char const *seq);
 
 public:
-    void requestTCPEcho();
+    void requestEcho();
 
-    void requestTCPTime();
+    void requestTime();
 
-    void requestUDPEcho();
+    RequestManager(int socket, int connectionType);
 
-    void requestUDPTime();
-
-    RequestManager(int socket);
+    void prepareTimeBuffer();
 };
 
 

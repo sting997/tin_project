@@ -5,62 +5,59 @@
 #include "RequestManager.h"
 
 
-void RequestManager::requestUDPEcho() {
-    int n, k;
-    struct sockaddr_in cliaddr;
-    socklen_t len = sizeof(cliaddr);
-    n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
-
-    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
-        buf[0] = SERVICE_GRANTED;
-    } else {
-        RequestManager::prepareRefuseBuffer(k);
-    }
-    sendto(sock, buf, n, 0, (struct sockaddr *) &cliaddr, len);
-
-}
-
-void RequestManager::requestUDPTime() {
-    int n, k;
+void RequestManager::UDPEcho() {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
 
-    n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+    ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+    int ticket_correctness;
 
-    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
-        bzero(buf, BUFFER_SIZE);
+    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
         buf[0] = SERVICE_GRANTED;
-        //Sends a time in seconds since the Epoch
-        std::time_t result = std::time(nullptr);
-        memcpy(buf + 1, &result, sizeof(&result));
-    } else {
-        prepareRefuseBuffer(k);
-    }
-    sendto(sock, buf, n, 0, (struct sockaddr *) &cliaddr, len);
+    else
+        prepareRefuseBuffer(ticket_correctness);
+
+    sendto(sock, buf, (size_t) n, 0, (struct sockaddr *) &cliaddr, len);
 }
 
-void RequestManager::requestTCPEcho() {
-    int k;
-    int endPos;
-    int rval, charsread;
+void RequestManager::UDPTime() {
+    struct sockaddr_in cliaddr;
+    socklen_t len = sizeof(cliaddr);
 
-    RequestManager::acceptConnection();
+    ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+    int ticket_correctness;
+
+    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
+        prepareTimeBuffer();
+    else
+        prepareRefuseBuffer(ticket_correctness);
+
+    sendto(sock, buf, size_t(n), 0, (struct sockaddr *) &cliaddr, len);
+}
+
+void RequestManager::TCPEcho() {
+    int ticket_correctness;
+    unsigned long endPos;
+    ssize_t rval;
+    size_t charsread;
+
+    acceptConnection();
 
     if (fork() == 0) {
         close(sock);
         bzero(buf, BUFFER_SIZE);
 
-        if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1)
+        if (read(connfd, buf, BUFFER_SIZE) == -1)
             perror("Reading stream message");
 
-        if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
+        if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
             buf[0] = SERVICE_GRANTED;
         } else {
-            RequestManager::prepareRefuseBuffer(k);
+            prepareRefuseBuffer(ticket_correctness);
             write(connfd, buf, strlen(buf));
             _exit(0);
         }
-        if ((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
+        if ((endPos = checkIfEnd("END")) != std::string::npos) {
             write(connfd, buf, endPos);
         } else {
             FILE *pFile;
@@ -86,7 +83,7 @@ void RequestManager::requestTCPEcho() {
                     remove(fileName);
 
                     _exit(0);
-                } else if ((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
+                } else if ((endPos = checkIfEnd("END")) != std::string::npos) {
                     fwrite(buf, sizeof(char), endPos, pFile);
                     break;
                 } else
@@ -109,43 +106,48 @@ void RequestManager::requestTCPEcho() {
     close(connfd);
 }
 
-void RequestManager::requestTCPTime() {
-    int k, rval;
+void RequestManager::TCPTime() {
+    int ticket_correctness;
 
-    RequestManager::acceptConnection();
+    acceptConnection();
 
     bzero(buf, BUFFER_SIZE);
 
-    if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1) {
+    if (read(connfd, buf, BUFFER_SIZE) == -1) {
         perror("Reading stream message");
+
         close(connfd);
         return;
     }
 
-    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
-        bzero(buf, BUFFER_SIZE);
-        buf[0] = SERVICE_GRANTED;
-        std::time_t result = std::time(nullptr);
-        memcpy(buf + 1, &result, sizeof(&result));
-    } else {
-        RequestManager::prepareRefuseBuffer(k);
-    }
+    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
+        prepareTimeBuffer();
+    else
+        prepareRefuseBuffer(ticket_correctness);
 
     write(connfd, buf, strlen(buf));
     close(connfd);
 }
 
-int RequestManager::checkIfEnd(char const *seq) {
+void RequestManager::prepareTimeBuffer() {
+    bzero(buf, BUFFER_SIZE);
+    buf[0] = SERVICE_GRANTED;
+
+    time_t result = time(nullptr);
+    memcpy(buf + 1, &result, sizeof(&result));
+}
+
+unsigned long RequestManager::checkIfEnd(char const *seq) {
     std::string bufs(buf);
     std::string subs(seq);
 
-    auto pos = bufs.find(seq);
-    return pos;
+    return bufs.find(seq);
 }
 
 void RequestManager::prepareRefuseBuffer(int errNum) {
     bzero(buf, BUFFER_SIZE);
     buf[0] = SERVICE_REFUSED;
+
     switch (errNum) {
         case 1:
             memcpy(buf + 1, "Invalid Ticket", sizeof("Invalid Ticket"));
@@ -156,7 +158,7 @@ void RequestManager::prepareRefuseBuffer(int errNum) {
         case 3:
             memcpy(buf + 1, "Ticket has expired", sizeof("Ticket has expired"));
             break;
-        case 4:
+        default:
             memcpy(buf + 1, "Invalid data format", sizeof("Invalid data format"));
             break;
     }
@@ -167,6 +169,21 @@ void RequestManager::acceptConnection() {
         perror("accept");
 }
 
-RequestManager::RequestManager(int socket) {
+void RequestManager::requestEcho() {
+    if (type == SOCK_DGRAM)
+        UDPEcho();
+    else
+        TCPEcho();
+}
+
+void RequestManager::requestTime() {
+    if (type == SOCK_DGRAM)
+        UDPTime();
+    else
+        TCPTime();
+}
+
+RequestManager::RequestManager(int socket, int connectionType) {
     sock = socket;
+    type = connectionType;
 }

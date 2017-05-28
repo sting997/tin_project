@@ -15,10 +15,10 @@
 
 void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name);
 
-void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s_addr, unsigned short sin_port);
+void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
 int main() {
-    int tcpEcho, tcpTime, udpEcho, udpTime, nready, maxfdp1;
+    int tcpEcho, tcpTime, udpEcho, udpTime, nready, maxfdp;
     fd_set rset;
     struct sockaddr_in servaddr;
 
@@ -32,7 +32,7 @@ int main() {
     fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_UDP_TIME);
     prepareSocket(udpTime, AF_INET, SOCK_DGRAM, 0, servaddr);
 
-    maxfdp1 = std::max({tcpEcho, tcpTime, udpEcho, udpTime}) + 1;
+    maxfdp = std::max({tcpEcho, tcpTime, udpEcho, udpTime}) + 1;
 
     while (true) {
         FD_ZERO(&rset);
@@ -41,35 +41,34 @@ int main() {
         FD_SET(udpEcho, &rset);
         FD_SET(udpTime, &rset);
 
-        if ((nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) {
+        if ((nready = select(maxfdp, &rset, NULL, NULL, NULL)) < 0) {
             perror("Something bad happened with select");
-            exit(0);
+            exit(nready);
         }
 
         if (FD_ISSET(tcpEcho, &rset)) {
-            RequestManager requestManager = RequestManager(tcpEcho);
-            requestManager.requestTCPEcho();
+            RequestManager requestManager = RequestManager(tcpEcho, SOCK_STREAM);
+            requestManager.requestEcho();
         }
 
         if (FD_ISSET(tcpTime, &rset)) {
-            RequestManager requestManager = RequestManager(tcpTime);
-            requestManager.requestTCPTime();
+            RequestManager requestManager = RequestManager(tcpTime, SOCK_STREAM);
+            requestManager.requestTime();
         }
 
         if (FD_ISSET(udpEcho, &rset)) {
-            RequestManager requestManager = RequestManager(udpEcho);
-            requestManager.requestUDPEcho();
+            RequestManager requestManager = RequestManager(udpEcho, SOCK_DGRAM);
+            requestManager.requestEcho();
         }
 
         if (FD_ISSET(udpTime, &rset)) {
-            RequestManager requestManager = RequestManager(udpTime);
-            requestManager.requestUDPTime();
+            RequestManager requestManager = RequestManager(udpTime, SOCK_DGRAM);
+            requestManager.requestTime();
         }
     }
 }
 
-void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s_addr, unsigned short sin_port) {
-    /* Create name with wildcards. */
+void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port) {
     name.sin_family = sin_family;
     name.sin_addr.s_addr = s_addr;
     name.sin_port = htons(sin_port);
@@ -77,7 +76,7 @@ void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s
 
 void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name) {
     int enable = 1;
-    socklen_t len;
+
     fd = socket(domain, type, protocol);
 
     if (fd == -1) {

@@ -3,7 +3,8 @@
 //
 
 #include "TicketCorrectnessTester.h"
-int TicketCorrectnessTester::CheckTicket(char * buf){
+
+int TicketCorrectnessTester::CheckTicket(char *buf) {
     // TODO
     // Basically everything
 

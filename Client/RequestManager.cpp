@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <cstring>
-#include <zconf.h>
+#include <unistd.h>
 #include <ctime>
 #include "RequestManager.h"
 #include "config.h"
@@ -19,30 +19,29 @@ void RequestManager::tcpEchoTest() {
     bzero(buf, 1024);
 
     //keep communicating with server
-    while(true) {
+    while (true) {
         printf("To ECHO: ");
         fgets(buf, 1024, stdin);
 
         //Send some data
-        if(send(sock , buf , strlen(buf) , 0) < 0) {
+        if (send(sock, buf, strlen(buf), 0) < 0) {
             perror("Send failed:");
             exit(1);
         }
-        endpos= checkIfEnd(buf, "END");
-        if(endpos != std::string::npos)
+        endpos = checkIfEnd(buf, "END");
+        if (endpos != std::string::npos)
             break;
     }
-    while(true) {
-        if((rval = read(sock , buf , 1024)) == -1) {
+    while (true) {
+        if ((rval = read(sock, buf, 1024)) == -1) {
             perror("Read failed:");
             exit(1);
         }
-        if(rval == 0) {
+        if (rval == 0) {
             printf("Ending connection.\n");
             break;
-        }
-        else
-            printf("%s\n",buf);
+        } else
+            printf("%s\n", buf);
     }
     close(sock);
 }
@@ -56,26 +55,25 @@ void RequestManager::tcpTimeTest() {
 
     memcpy(buf, "TCP TIME PLS", sizeof("TCP TIME PLS"));
 
-    if(send(sock , buf , strlen(buf) , 0) < 0) {
+    if (send(sock, buf, strlen(buf), 0) < 0) {
         perror("Send failed:");
         exit(1);
     }
 
     bzero(buf, 1024);
-    if((rval = read(sock , buf , 1024)) == -1) {
+    if ((rval = read(sock, buf, 1024)) == -1) {
         perror("Read failed:");
         exit(1);
     }
-    if(rval == 0) {
+    if (rval == 0) {
         printf("Service server disconnected.\n");
-    }
-    else {
+    } else {
         printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
     }
     close(sock);
 }
 
-int RequestManager::startTcpCon(char const* ip, int port) {
+int RequestManager::startTcpCon(char const *ip, int port) {
 
     struct sockaddr_in service;
     int sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -91,7 +89,7 @@ int RequestManager::startTcpCon(char const* ip, int port) {
     service.sin_port = htons(port);
 
     //Connect to remote server
-    if (connect(sock , (struct sockaddr *)&service , sizeof(service)) < 0) {
+    if (connect(sock, (struct sockaddr *) &service, sizeof(service)) < 0) {
         perror("Connect failed:");
         return -1;
     }
@@ -99,7 +97,7 @@ int RequestManager::startTcpCon(char const* ip, int port) {
     return sock;
 }
 
-int RequestManager::checkIfEnd(char const* buf, char const* seq) {
+int RequestManager::checkIfEnd(char const *buf, char const *seq) {
     std::string bufs(buf);
     std::string subs(seq);
 

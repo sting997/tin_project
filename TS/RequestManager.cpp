@@ -23,13 +23,12 @@ void RequestManager::requestTicket() {
         std::string auth_data = getAuthData(buf);
 
         int status = privilege_manager.getPrivilegeInfo(inet_ntoa(remote.sin_addr), auth_data);
-		std::string message;
-		if (status == 3){
-			Ticket ticket;
-			message = ticket.createTicket("oto jest ticket");//change the argument to a string based on privilege info
-		}
-        else
-			message = std::to_string(status);
+        std::string message;
+        if (status == 3) {
+            Ticket ticket;
+            message = ticket.createTicket("oto jest ticket");//change the argument to a string based on privilege info
+        } else
+            message = std::to_string(status);
 
         sendMessage(sock, TS_GRANTED, message);
     }

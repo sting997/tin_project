@@ -9,12 +9,11 @@ void RequestManager::requestUDPEcho() {
     int n, k;
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
-    n = recvfrom(sock, buf, BUFFER_SIZE, 0,(struct sockaddr *) &cliaddr, &len);
+    n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
 
-    if((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
+    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
         buf[0] = SERVICE_GRANTED;
-    }
-    else {
+    } else {
         RequestManager::prepareRefuseBuffer(k);
     }
     sendto(sock, buf, n, 0, (struct sockaddr *) &cliaddr, len);
@@ -26,16 +25,15 @@ void RequestManager::requestUDPTime() {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
 
-    n = recvfrom(sock, buf, BUFFER_SIZE, 0,(struct sockaddr *) &cliaddr, &len);
+    n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
 
-    if((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
+    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
         bzero(buf, BUFFER_SIZE);
         buf[0] = SERVICE_GRANTED;
         //Sends a time in seconds since the Epoch
         std::time_t result = std::time(nullptr);
-        memcpy(buf+1, &result, sizeof(&result));
-    }
-    else {
+        memcpy(buf + 1, &result, sizeof(&result));
+    } else {
         prepareRefuseBuffer(k);
     }
     sendto(sock, buf, n, 0, (struct sockaddr *) &cliaddr, len);
@@ -55,19 +53,17 @@ void RequestManager::requestTCPEcho() {
         if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1)
             perror("Reading stream message");
 
-        if((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
+        if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
             buf[0] = SERVICE_GRANTED;
-        }
-        else {
+        } else {
             RequestManager::prepareRefuseBuffer(k);
             write(connfd, buf, strlen(buf));
             _exit(0);
         }
-        if((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
+        if ((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
             write(connfd, buf, endPos);
-        }
-        else {
-            FILE* pFile;
+        } else {
+            FILE *pFile;
             char fileName[64];
             sprintf(fileName, "%d", getpid());
             pFile = fopen(fileName, "w+");
@@ -83,29 +79,27 @@ void RequestManager::requestTCPEcho() {
 
                     _exit(0);
                 }
-                if(rval == 0) {
+                if (rval == 0) {
                     printf("Premature end of TCP-ECHO REQUEST connection. Closing service.\n");
 
                     fclose(pFile);
                     remove(fileName);
 
                     _exit(0);
-                }
-                else if((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
+                } else if ((endPos = RequestManager::checkIfEnd("END")) != std::string::npos) {
                     fwrite(buf, sizeof(char), endPos, pFile);
                     break;
-                }
-                else
+                } else
                     fwrite(buf, sizeof(char), strlen(buf), pFile);
-            }while(true);
+            } while (true);
 
             rewind(pFile);
             bzero(buf, sizeof buf);
 
-            do{
+            do {
                 charsread = fread(buf, sizeof(char), BUFFER_SIZE, pFile);
                 write(connfd, buf, charsread);
-            }while(charsread == 1024);
+            } while (charsread == 1024);
 
             fclose(pFile);
             remove(fileName);
@@ -128,13 +122,12 @@ void RequestManager::requestTCPTime() {
         return;
     }
 
-    if((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
+    if ((k = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
         bzero(buf, BUFFER_SIZE);
         buf[0] = SERVICE_GRANTED;
         std::time_t result = std::time(nullptr);
-        memcpy(buf+1, &result, sizeof(&result));
-    }
-    else {
+        memcpy(buf + 1, &result, sizeof(&result));
+    } else {
         RequestManager::prepareRefuseBuffer(k);
     }
 
@@ -142,7 +135,7 @@ void RequestManager::requestTCPTime() {
     close(connfd);
 }
 
-int RequestManager::checkIfEnd(char const* seq) {
+int RequestManager::checkIfEnd(char const *seq) {
     std::string bufs(buf);
     std::string subs(seq);
 
@@ -153,18 +146,18 @@ int RequestManager::checkIfEnd(char const* seq) {
 void RequestManager::prepareRefuseBuffer(int errNum) {
     bzero(buf, BUFFER_SIZE);
     buf[0] = SERVICE_REFUSED;
-    switch(errNum) {
+    switch (errNum) {
         case 1:
-            memcpy(buf+1, "Invalid Ticket", sizeof("Invalid Ticket"));
+            memcpy(buf + 1, "Invalid Ticket", sizeof("Invalid Ticket"));
             break;
         case 2:
-            memcpy(buf+1, "Invalid IP address", sizeof("Invalid IP address"));
+            memcpy(buf + 1, "Invalid IP address", sizeof("Invalid IP address"));
             break;
         case 3:
-            memcpy(buf+1, "Ticket has expired", sizeof("Ticket has expired"));
+            memcpy(buf + 1, "Ticket has expired", sizeof("Ticket has expired"));
             break;
         case 4:
-            memcpy(buf+1, "Invalid data format", sizeof("Invalid data format"));
+            memcpy(buf + 1, "Invalid data format", sizeof("Invalid data format"));
             break;
     }
 }

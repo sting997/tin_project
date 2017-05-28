@@ -38,13 +38,15 @@ class RequestManager {
 
     void prepareRefuseBuffer(int errNum);
 
-    int checkIfEnd(char const* seq);
+    int checkIfEnd(char const *seq);
 
 public:
     void requestTCPEcho();
+
     void requestTCPTime();
 
     void requestUDPEcho();
+
     void requestUDPTime();
 
     RequestManager(int socket);

@@ -8,7 +8,7 @@
 
 class TicketCorrectnessTester {
 public:
-    static int CheckTicket(char * buf);
+    static int CheckTicket(char *buf);
 };
 
 

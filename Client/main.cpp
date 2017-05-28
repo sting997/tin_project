@@ -15,7 +15,9 @@
 #include "config.h"
 
 void setTimeout(int socket, time_t tv_sec, long int tv_usec);
+
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
+
 void udpTest(int port);
 
 int main(int argc, char *argv[]) {
@@ -78,7 +80,7 @@ int main(int argc, char *argv[]) {
     //create simple request for server
     req[0] = TS_REQ_TICKET;
 
-    char *auth_data =  (char *) "1;1;admin;admin";
+    char *auth_data = (char *) "1;1;admin;admin";
     char temp[1024];
     strcpy(temp, req);
     strcat(temp, auth_data);
@@ -144,15 +146,12 @@ void udpTest(int port) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
             if (port == PORT_UDP_TIME) {
                 printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
-            }
-            else
+            } else
                 printf("%s\n", (buf + 1));
-        }
-        else if (buf[0] == SERVICE_REFUSED) {
+        } else if (buf[0] == SERVICE_REFUSED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
             printf("%s\n", (buf + 1));
-        }
-        else
+        } else
             printf("Received roaming package, didn't want it though!\n");
     }
 

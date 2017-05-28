@@ -7,4 +7,5 @@
 #define TS_REFUSED '5'
 #define SERVICE_GRANTED '6'
 #define SERVICE_REFUSED '7'
+#define ERROR '9'
 #endif

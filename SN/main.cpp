@@ -50,6 +50,7 @@ int main()
     prepareSocket(udpfd2, AF_INET, SOCK_DGRAM, 0, servaddr);
 
     maxfdp1 = maxFd1(tcpfd, tcpfd2, udpfd, udpfd2);
+
     while(true) {
         FD_ZERO(&rset);
         FD_SET(tcpfd, &rset);

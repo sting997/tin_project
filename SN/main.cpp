@@ -17,8 +17,6 @@ void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_
 
 void fillSockaddr_in(struct sockaddr_in &name, short sin_family, unsigned long s_addr, unsigned short sin_port);
 
-int maxFd(int fd, int fd2, int fd3, int fd4);
-
 int main() {
     int tcpEcho, tcpTime, udpEcho, udpTime, nready, maxfdp1;
     fd_set rset;
@@ -99,19 +97,4 @@ void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_
         perror("listen on socket");
         exit(1);
     }
-}
-
-int maxFd(int fd, int fd2, int fd3, int fd4) {
-    int max = fd;
-
-    if (max < fd2)
-        max = fd2;
-
-    if (max < fd3)
-        max = fd3;
-
-    if (max < fd4)
-        max = fd4;
-
-    return max;
 }

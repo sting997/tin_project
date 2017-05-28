@@ -17,6 +17,7 @@
 #include "../protocol_codes.h"
 #include "TicketCorrectnessTester.h"
 #include "TicketDecryptor.h"
+#include "config.h"
 
 #define LISTENQ 5
 #define BUFFER_SIZE 1024
@@ -40,14 +41,14 @@ int main()
     struct sockaddr_in servaddr;
     char buf[BUFFER_SIZE];
 
-    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, 5000);
+    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_TCP_ECHO);
     prepareSocket(tcpfd, AF_INET, SOCK_STREAM, 0, servaddr);
-    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, 5001);
+    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_TCP_TIME);
     prepareSocket(tcpfd2, AF_INET, SOCK_STREAM, 0, servaddr);
 
-    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, 6000);
+    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_UDP_ECHO);
     prepareSocket(udpfd, AF_INET, SOCK_DGRAM, 0, servaddr);
-    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, 6001);
+    fillSockaddr_in(servaddr, AF_INET, INADDR_ANY, PORT_UDP_TIME);
     prepareSocket(udpfd2, AF_INET, SOCK_DGRAM, 0, servaddr);
 
     maxfdp1 = maxFd1(tcpfd, tcpfd2, udpfd, udpfd2);
@@ -232,7 +233,7 @@ void TCPEcho(int fd, char* buf) {
             fclose(pFile);
             remove(fileName);
         }
-        _exit(0);
+        exit(0);
     }
     close(connfd);
 }

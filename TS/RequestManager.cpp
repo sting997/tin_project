@@ -37,7 +37,6 @@ void RequestManager::requestTicket() {
 
 void RequestManager::sendMessage(int sock, char code, std::string message) {
     std::string response = code + message;
-    printf("%s", response.c_str());
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &remote, len);
 }
 

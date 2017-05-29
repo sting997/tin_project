@@ -6,7 +6,7 @@ set(EXEC client)
 
 set(GCC_COVERAGE_LINK_FLAGS "-lcryptopp")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
-set(SOURCE_FILES main.cpp AuthManager.cpp AuthManager.h TicketManager.cpp TicketManager.h RequestManager.cpp RequestManager.h config.h ../protocol_codes.h ../SN/TicketDecryptor.h ../SN/TicketDecryptor.cpp)
+set(SOURCE_FILES main.cpp AuthManager.cpp AuthManager.h TicketManager.cpp TicketManager.h RequestManager.cpp RequestManager.h config.h ../protocol_codes.h ../SN/TicketDecryptor.h ../SN/TicketDecryptor.cpp ConsoleMenu.cpp ConsoleMenu.h)
 add_executable(${EXEC} ${SOURCE_FILES})
 
 find_library(CRYPTOPP crypto++ /usr/lib)

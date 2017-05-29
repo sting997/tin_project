@@ -16,15 +16,15 @@
 #include <cstdio>
 #include <arpa/inet.h>
 #include <iostream>
+#include <string>
 
 class RequestManager {
     int sock;
     char buf[1024];
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
-    ssize_t n;
 
-    void sendMessage(int sock, char code, std::string message);
+    void sendMessage(char code, std::string message);
 
     std::string getAuthData(std::string buf);
 
@@ -34,6 +34,7 @@ class RequestManager {
 
     void requestTicket();
 
+    std::vector<std::string> getSplitData(std::string data);
 
 public:
 

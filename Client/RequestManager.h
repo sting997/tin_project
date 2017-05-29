@@ -63,5 +63,4 @@ public:
     void RequestNewData() {};
 };
 
-
 #endif //TIN_REQUESTMANAGER_H

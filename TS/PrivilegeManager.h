@@ -16,11 +16,7 @@
 #include "config.h"
 
 class PrivilegeManager {
-    std::vector<std::string> getSplitAuthData(std::string auth_data);
-
-    bool isValidAuthData(std::string IP, std::vector<std::string> split_auth_data);
-
-    bool isValidIP(std::string IP);
+    bool isValidAuthData(std::vector<std::string> split_auth_data);
 
     bool isValidServerName(std::vector<std::string> split_auth_data);
 
@@ -32,14 +28,8 @@ class PrivilegeManager {
 
     int getStatusFromDB(std::string IP, std::vector<std::string> split_auth_data);
 
-    bool isUserInDB(std::string username, std::string password);
-
-    bool canIPPerformService(std::string IP, std::string server_name, std::string service_name);
-
-    bool doesLineExist(std::string name, std::string line);
-
 public:
-    int getPrivilegeInfo(std::string IP, std::string auth_data);
+    int getPrivilegeInfo(std::string IP, std::vector<std::string> split_auth_data);
 };
 
 #endif //TIN_PRIVILEGEMANAGER_H

@@ -37,68 +37,33 @@ void RequestManager::UDPTime() {
 
 void RequestManager::TCPEcho() {
     int ticket_correctness;
-    unsigned long endPos;
-    ssize_t rval;
-    size_t charsread;
 
     acceptConnection();
 
     if (fork() == 0) {
         close(sock);
-        bzero(buf, BUFFER_SIZE);
 
-        if (read(connfd, buf, BUFFER_SIZE) == -1)
-            perror("Reading stream message");
+        if(readOnTCP() <= 0)
+            return;
 
-        if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0) {
-            buf[0] = SERVICE_GRANTED;
-        } else {
+        if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) != 0) {
             prepareRefuseBuffer(ticket_correctness);
+
             write(connfd, buf, strlen(buf));
             _exit(0);
         }
-        if ((endPos = checkIfEnd("END")) != std::string::npos) {
-            write(connfd, buf, endPos);
+
+        buf[0] = SERVICE_GRANTED;
+
+        if (checkIfLastMsg()) {
+            write(connfd, buf, msgEndPos);
         } else {
-            FILE *pFile;
-            char fileName[64];
-            sprintf(fileName, "%d", getpid());
-            pFile = fopen(fileName, "w+");
 
-            fwrite(buf, sizeof(char), strlen(buf), pFile);
-            do {
-                bzero(buf, sizeof buf);
-                if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1) {
-                    perror("Reading stream message");
+            prepareFileName();
 
-                    fclose(pFile);
-                    remove(fileName);
+            saveTCPEcho();
+            sendTCPEcho();
 
-                    _exit(0);
-                }
-                if (rval == 0) {
-                    printf("Premature end of TCP-ECHO REQUEST connection. Closing service.\n");
-
-                    fclose(pFile);
-                    remove(fileName);
-
-                    _exit(0);
-                } else if ((endPos = checkIfEnd("END")) != std::string::npos) {
-                    fwrite(buf, sizeof(char), endPos, pFile);
-                    break;
-                } else
-                    fwrite(buf, sizeof(char), strlen(buf), pFile);
-            } while (true);
-
-            rewind(pFile);
-            bzero(buf, sizeof buf);
-
-            do {
-                charsread = fread(buf, sizeof(char), BUFFER_SIZE, pFile);
-                write(connfd, buf, charsread);
-            } while (charsread == 1024);
-
-            fclose(pFile);
             remove(fileName);
         }
         _exit(0);
@@ -106,19 +71,29 @@ void RequestManager::TCPEcho() {
     close(connfd);
 }
 
+ssize_t RequestManager::readOnTCP() {
+    ssize_t rval;
+    bzero(buf, BUFFER_SIZE);
+
+    if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1) {
+        perror("Reading stream message:");
+        close(connfd);
+    } else if (rval == 0){
+        printf("Client has disconnected. Closing TCP service.\n");
+        close(connfd);
+    }
+    msgEndPos = msgEndPosition();
+
+    return rval;
+}
+
 void RequestManager::TCPTime() {
     int ticket_correctness;
 
     acceptConnection();
 
-    bzero(buf, BUFFER_SIZE);
-
-    if (read(connfd, buf, BUFFER_SIZE) == -1) {
-        perror("Reading stream message");
-
-        close(connfd);
+    if(readOnTCP() <= 0)
         return;
-    }
 
     if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
         prepareTimeBuffer();
@@ -137,11 +112,14 @@ void RequestManager::prepareTimeBuffer() {
     memcpy(buf + 1, &result, sizeof(&result));
 }
 
-unsigned long RequestManager::checkIfEnd(char const *seq) {
+unsigned long RequestManager::msgEndPosition() {
     std::string bufs(buf);
-    std::string subs(seq);
 
-    return bufs.find(seq);
+    return bufs.find(msgEndIndicator);
+}
+
+bool RequestManager::checkIfLastMsg() {
+    return msgEndPos != std::string::npos;
 }
 
 void RequestManager::prepareRefuseBuffer(int errNum) {
@@ -172,11 +150,49 @@ void RequestManager::acceptConnection() {
         perror("accept");
 }
 
+void RequestManager::saveTCPEcho() {
+    FILE* pFile = fopen(fileName, "w+");
+    fwrite(buf, sizeof(char), strlen(buf), pFile);
+    do {
+        bzero(buf, sizeof buf);
+        if(readOnTCP() <= 0) {
+            fclose(pFile);
+            remove(fileName);
+
+            _exit(0);
+        }
+
+        if (checkIfLastMsg()) {
+            fwrite(buf, sizeof(char), msgEndPos, pFile);
+            break;
+        } else
+            fwrite(buf, sizeof(char), strlen(buf), pFile);
+    } while (true);
+
+    fclose(pFile);
+}
+
+void RequestManager::sendTCPEcho() {
+    FILE* pFile = fopen(fileName, "r");
+    size_t charsread;
+
+    do {
+        charsread = fread(buf, sizeof(char), BUFFER_SIZE, pFile);
+        write(connfd, buf, charsread);
+    } while (charsread == 1024);
+
+    fclose(pFile);
+}
+
 void RequestManager::requestEcho() {
     if (type == SOCK_DGRAM)
         UDPEcho();
     else
         TCPEcho();
+}
+
+void RequestManager::prepareFileName() {
+    sprintf(fileName, "%d", getpid());
 }
 
 void RequestManager::requestTime() {
@@ -186,7 +202,7 @@ void RequestManager::requestTime() {
         TCPTime();
 }
 
-RequestManager::RequestManager(int socket, int connectionType) {
+RequestManager::RequestManager(int socket, int connectionType = SOCK_DGRAM) {
     sock = socket;
     type = connectionType;
 }

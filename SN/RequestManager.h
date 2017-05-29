@@ -23,6 +23,9 @@ class RequestManager {
     int sock, connfd;
     int type;
     char buf[BUFFER_SIZE];
+    char fileName[8];
+    static constexpr char * msgEndIndicator = (char *) "END";
+    size_t msgEndPos;
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
 
@@ -36,9 +39,21 @@ class RequestManager {
 
     void acceptConnection();
 
+    ssize_t readOnTCP();
+
     void prepareRefuseBuffer(int errNum);
 
-    unsigned long checkIfEnd(char const *seq);
+    void prepareTimeBuffer();
+
+    void prepareFileName();
+
+    void saveTCPEcho();
+
+    void sendTCPEcho();
+
+    unsigned long msgEndPosition();
+
+    bool checkIfLastMsg();
 
 public:
     void requestEcho();
@@ -47,7 +62,6 @@ public:
 
     RequestManager(int socket, int connectionType);
 
-    void prepareTimeBuffer();
 };
 
 

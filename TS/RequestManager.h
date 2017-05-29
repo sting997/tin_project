@@ -36,6 +36,9 @@ class RequestManager {
 
     std::vector<std::string> getSplitData(std::string data);
 
+	std::string prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
+											std::string serviceNr, int ticketValidityTime);
+
 public:
 
     void listenForRequests();

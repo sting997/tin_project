@@ -9,6 +9,9 @@ Ticket::Ticket() {
     memset(iv, 0x00, (size_t) CryptoPP::AES::BLOCKSIZE);
 }
 
+//this method creates a string that is ready to be send as a ticket
+//the method encrypts the given parameter string (the name of the parameter
+//is not the best in the world, but you know what i meant ;)
 std::string Ticket::createTicket(std::string privilegeInfo) {
     std::string plaintext = privilegeInfo;
     std::string ciphertext;

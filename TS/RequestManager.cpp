@@ -42,8 +42,10 @@ void RequestManager::requestTicket() {
 
         printf("validity %d", ticket_time_validity);
 
+		std::string unencryptedTicket = prepareTicketToEncryption(remote.sin_addr.s_addr,
+										split_auth_data[0], split_auth_data[1], ticket_time_validity);
         Ticket ticket;
-        message = ticket.createTicket("oto jest ticket");//change the argument to a string based on privilege info
+        message = ticket.createTicket(unencryptedTicket);
     } else {
         grant_status = TS_REFUSED;
         message = std::to_string(privilege_status);
@@ -99,4 +101,14 @@ std::vector<std::string> RequestManager::getSplitData(std::string data) {
         split_data.push_back(token);
 
     return split_data;
+}
+
+//this function prepares a string ready to be used by a method from Ticket class
+//which encrypts the result of this function
+//parameters - self explanatory
+std::string RequestManager::prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
+											std::string serviceNr, int ticketValidityTime){
+	std::string result = std::to_string(s_addr) + ";" + serverNr + ";"
+						+ serviceNr + ";"+ std::to_string(ticketValidityTime);
+	return result;
 }

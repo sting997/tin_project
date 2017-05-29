@@ -179,7 +179,7 @@ void RequestManager::sendTCPEcho() {
     do {
         charsread = fread(buf, sizeof(char), BUFFER_SIZE, pFile);
         write(connfd, buf, charsread);
-    } while (charsread == 1024);
+    } while (charsread == BUFFER_SIZE);
 
     fclose(pFile);
 }

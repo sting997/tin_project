@@ -5,6 +5,7 @@
 #ifndef TIN_CONFIG_H
 #define TIN_CONFIG_H
 
+#define TS_PORT 10000
 #define PORT_IP_REQUEST 9000
 #define PORT_TICKET_REQUEST 8000
 #define DELIMITER ';'

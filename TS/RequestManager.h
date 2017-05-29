@@ -24,18 +24,20 @@ class RequestManager {
     socklen_t len = sizeof(remote);
     ssize_t n;
 
-    bool shouldPerform(char code);
-
     void sendMessage(int sock, char code, std::string message);
 
     std::string getAuthData(std::string buf);
 
-    char getRequestCode(char *message);
+    char getRequestCode();
 
-public:
     void requestIP();
 
     void requestTicket();
+
+
+public:
+
+    void listenForRequests();
 
     RequestManager(int socket);
 };

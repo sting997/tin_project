@@ -15,35 +15,16 @@ void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
 int main() {
-    int udpfd_IP, udpfd_ticket, nready, maxfdp;
+    int udp;
     fd_set rset;
     struct sockaddr_in name;
 
-    fillSockaddr_in(name, AF_INET, INADDR_ANY, PORT_IP_REQUEST);
-    prepareSocket(udpfd_IP, AF_INET, SOCK_DGRAM, 0, name);
-    fillSockaddr_in(name, AF_INET, INADDR_ANY, PORT_TICKET_REQUEST);
-    prepareSocket(udpfd_ticket, AF_INET, SOCK_DGRAM, 0, name);
+    fillSockaddr_in(name, AF_INET, INADDR_ANY, TS_PORT);
+    prepareSocket(udp, AF_INET, SOCK_DGRAM, 0, name);
 
-    FD_ZERO(&rset);
-    maxfdp = udpfd_ticket > udpfd_IP ? udpfd_ticket + 1 : udpfd_IP + 1;
-
-    while (true) {
-        FD_SET(udpfd_IP, &rset);
-        FD_SET(udpfd_ticket, &rset);
-
-        if ((nready = select(maxfdp, &rset, NULL, NULL, NULL)) < 0) {
-            perror("Something bad happened with select");
-            return nready;
-        }
-
-        if (FD_ISSET(udpfd_IP, &rset)) {
-            RequestManager requestManager = RequestManager(udpfd_IP);
-            requestManager.requestIP();
-        } else if (FD_ISSET(udpfd_ticket, &rset)) {
-            RequestManager requestManager = RequestManager(udpfd_ticket);
-            requestManager.requestTicket();
-        }
-    }
+    RequestManager requestManager = RequestManager(udp);
+    
+    requestManager.listenForRequests();
 }
 
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port) {

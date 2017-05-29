@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), PORT_IP_REQUEST);
+    fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), TS_PORT);
 
     //create simple request for server
     char req[2];
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     setTimeout(sock, 3, 0);
 
     memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, PORT_TICKET_REQUEST);
+    fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, TS_PORT);
 
     //create simple request for server
     req[0] = TS_REQ_TICKET;
@@ -95,8 +95,11 @@ int main(int argc, char *argv[]) {
     else {
         if (buf[0] == TS_GRANTED) {
             printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
-        } else
+        } else if(buf[0] == TS_REFUSED)
+            printf("TS didn't give me a ticket, what a bitch!!!\n");
+        else {
             printf("Received roaming package, didn't want it though!\n");
+        }
     }
 
     udpTest(PORT_UDP_TIME);

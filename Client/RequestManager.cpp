@@ -2,17 +2,6 @@
 // Created by monspid on 06.05.17.
 //
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <cstdlib>
-#include <unistd.h>
-#include <cstring>
-#include <arpa/inet.h>
-#include <ctime>
-#include <iostream>
-#include "../protocol_codes.h"
 #include "RequestManager.h"
 
 RequestManager::RequestManager() {

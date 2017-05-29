@@ -14,34 +14,44 @@
 #include <iostream>
 #include "../protocol_codes.h"
 #include "RequestManager.h"
-#include "config.h"
 
 RequestManager::RequestManager() {
 }
 
-void RequestManager::RequestTCPEcho() {
-    sock = startTcpCon("127.0.0.1", PORT_TCP_ECHO);
-    ssize_t rval;
-    unsigned long endpos;
-
+void RequestManager::getUserInput() {
     bzero(buf, 1024);
+    //fflush(stdin);
+    fgets(buf, 1024, stdin);
+}
+
+bool RequestManager::checkIfLastMsg() {
+    return msgEndPosition() != std::string::npos;
+}
+
+unsigned long RequestManager::msgEndPosition() {
+    std::string bufs(buf);
+
+    return bufs.find(msgEndIndicator);
+}
+
+void RequestManager::RequestTCPEcho() {
+    prepareSocket(PORT_TCP_ECHO, SOCK_STREAM, inet_addr("127.0.0.1"));
+
+    ssize_t rval;
 
     //keep communicating with server
     while (true) {
         printf("To ECHO: ");
-        fgets(buf, 1024, stdin);
+        getUserInput();
 
-        //Send some data
-        if (send(sock, buf, strlen(buf), 0) < 0) {
-            perror("Send failed:");
-            exit(1);
-        }
-        endpos = checkIfEnd(buf, "END");
-        if (endpos != std::string::npos)
+        sendMessage(sock, 1, buf);
+
+        if (checkIfLastMsg())
             break;
     }
+
     while (true) {
-        if ((rval = read(sock, buf, 1024)) == -1) {
+        if ((rval = receiveMessage()) == -1) {
             perror("Read failed:");
             exit(1);
         }
@@ -55,20 +65,12 @@ void RequestManager::RequestTCPEcho() {
 }
 
 void RequestManager::RequestTCPTime() {
-    sock = startTcpCon("127.0.0.1", PORT_TCP_TIME);
+    prepareSocket(PORT_TCP_TIME, SOCK_STREAM, inet_addr("127.0.0.1"));
     ssize_t rval;
 
-    bzero(buf, 1024);
+    sendMessage(sock, 2, "PLS TCP TIME");
 
-    memcpy(buf, "TCP TIME PLS", sizeof("TCP TIME PLS"));
-
-    if (send(sock, buf, strlen(buf), 0) < 0) {
-        perror("Send failed:");
-        exit(1);
-    }
-
-    bzero(buf, 1024);
-    if ((rval = read(sock, buf, 1024)) == -1) {
+    if ((rval = receiveMessage()) == -1) {
         perror("Read failed:");
         exit(1);
     }
@@ -78,35 +80,6 @@ void RequestManager::RequestTCPTime() {
         printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
     }
     close(sock);
-}
-
-int RequestManager::startTcpCon(char const *ip, uint16_t port) {
-    int sock = socket(PF_INET, SOCK_STREAM, 0);
-
-    if (sock == -1) {
-        perror("Opening datagram socket:");
-        exit(1);
-    }
-
-    memset(&service, 0, sizeof(service));
-    service.sin_family = AF_INET;
-    service.sin_addr.s_addr = inet_addr(ip);
-    service.sin_port = htons(port);
-
-    //Connect to remote server
-    if (connect(sock, (struct sockaddr *) &service, sizeof(service)) < 0) {
-        perror("Connect failed:");
-        return -1;
-    }
-
-    return sock;
-}
-
-unsigned long RequestManager::checkIfEnd(char const *buf, char const *seq) {
-    std::string bufs(buf);
-    std::string subs(seq);
-
-    return bufs.find(seq);
 }
 
 void RequestManager::setTimeout(int socket, time_t tv_sec, long int tv_usec) {
@@ -123,158 +96,133 @@ void RequestManager::fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_f
     name.sin_port = htons(sin_port);
 }
 
-void RequestManager::RequestIP() {
-    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+void RequestManager::sendMessage(int sock, char code, std::string message) {
+    std::string response = code + message;
+    sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
+}
+
+void RequestManager::prepareBroadcastSocket(int port) {
+    prepareSocket(port, SOCK_DGRAM, INADDR_ANY);
+
+    int val = 1;
+    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val));
+}
+
+void RequestManager::prepareSocket(unsigned short port, int type, in_addr_t netlong) {
+    sock = socket(PF_INET, type, 0);
 
     if (sock == -1) {
         puts("opening datagram socket");
-        exit(1);
+        return;
     }
 
     setTimeout(sock, 3, 0);
 
-    memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, htonl(INADDR_ANY), TS_PORT);
+    memset(&name, 0, sizeof(name));
+    fillSockaddr_in(name, AF_INET, netlong, port);
 
-
-    req[0] = TS_REQ_IP;
-    req[1] = 0;
-    /* Send message. */
-    if (sendto(sock, req, sizeof req, 0, (struct sockaddr *) &broadcastAddr, sizeof broadcastAddr) == -1)
-        puts("sending datagram message");
-    //receive package from server
-    len = sizeof(remote);
-    while (true) {
-        bzero(buf, 1024);
-        n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
-        if (n < 0) {
-            puts("Error: receiving data from TS");
-            break;
-        } else {
-            if (buf[0] == TS_IP) {
-                printf("Received package from TS: %s\n", inet_ntoa(remote.sin_addr));
-                break;
-            } else
-                printf("Received roaming package, didn't want it though!\n");
-        }
+    if (type == SOCK_STREAM && connect(sock, (struct sockaddr *) &name, sizeof(name)) < 0) {
+        perror("Connect failed:");
     }
+}
+
+ssize_t RequestManager::receiveMessage() {
+    ssize_t n;
+
+    bzero(buf, 1024);
+    len = sizeof(remote);
+
+    n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
+
+    return n;
+}
+
+void RequestManager::RequestIP() {
+    prepareBroadcastSocket(TS_PORT);
+
+    sendMessage(sock, TS_REQ_IP, "");
+    if (receiveMessage() < 0) {
+        puts("Error: receiving data");
+        close(sock);
+        return;
+    }
+
+    if (buf[0] == TS_IP) {
+        printf("Received package from TS: %s\n", inet_ntoa(remote.sin_addr));
+    } else {
+        printf("Received roaming package, didn't want it though!\n");
+    }
+
     close(sock);
 }
 
 void RequestManager::RequestTicket() {
     /* Create socket on which to send. */
-    sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    prepareSocket(TS_PORT, SOCK_DGRAM, remote.sin_addr.s_addr);
 
-    if (sock == -1) {
-        puts("opening datagram socket");
-        exit(1);
+    sendMessage(sock, TS_REQ_TICKET, "1;1;admin;admin");
+
+    if (receiveMessage() < 0) {
+        puts("Error: receiving data");
+        close(sock);
+        return;
     }
-    setTimeout(sock, 3, 0);
 
-    memset(&broadcastAddr, 0, sizeof(broadcastAddr));
-    fillSockaddr_in(broadcastAddr, AF_INET, remote.sin_addr.s_addr, TS_PORT);
-
-    //create simple request for server
-    req[0] = TS_REQ_TICKET;
-
-    char *auth_data = (char *) "1;1;admin;admin";
-    char temp[1024];
-    strcpy(temp, req);
-    strcat(temp, auth_data);
-
-    /* Send message. */
-    if (sendto(sock, temp, sizeof temp, 0, (struct sockaddr *) &broadcastAddr, sizeof broadcastAddr) == -1)
-        puts("sending datagram message");
-
-    n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
-    if (n < 0)
-        puts("Error: receiving data from TS");
+    if (buf[0] == TS_GRANTED) {
+        printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
+    } else if (buf[0] == TS_REFUSED)
+        printf("TS didn't give me a ticket, what a bitch!!!\n");
     else {
-        if (buf[0] == TS_GRANTED) {
-            printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
-        } else if (buf[0] == TS_REFUSED)
-            printf("TS didn't give me a ticket, what a bitch!!!\n");
-        else {
-            printf("Received roaming package, didn't want it though!\n");
-        }
+        printf("Received roaming package, didn't want it though!\n");
     }
     close(sock);
 }
 
 void RequestManager::RequestUDPEcho() {
-    /* Create socket on which to send. */
-    sock = socket(PF_INET, SOCK_DGRAM, 0);
 
-    if (sock == -1) {
-        puts("opening datagram socket");
-        exit(1);
+    prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
+
+    sendMessage(sock, 1, "UDPEcho: Lorem Ipsum");
+
+    if (receiveMessage() < 0) {
+        puts("Error: receiving data");
+        close(sock);
+        return;
     }
-    setTimeout(sock, 3, 0);
 
-    memset(&service, 0, sizeof(service));
-    fillSockaddr_in(service, AF_INET, inet_addr("127.0.0.1"), PORT_UDP_ECHO);
 
-    bzero(buf, 1024);
-    memcpy(buf + 1, "UDPEcho: Lorem Ipsum", sizeof("UDPEcho: Lorem Ipsum"));
-    if (sendto(sock, buf, sizeof buf, 0, (struct sockaddr *) &service, sizeof service) == -1)
-        puts("sending datagram message");
-    //receive package from server
-    len = sizeof(remote);
-
-    n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
-
-    if (n < 0)
-        puts("Error: receiving data from Sn");
-    else {
-        if (buf[0] == SERVICE_GRANTED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            printf("%s\n", (buf + 1));
-        } else if (buf[0] == SERVICE_REFUSED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            printf("%s\n", (buf + 1));
-        } else
-            printf("Received roaming package, didn't want it though!\n");
-    }
+    if (buf[0] == SERVICE_GRANTED) {
+        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+        printf("%s\n", (buf + 1));
+    } else if (buf[0] == SERVICE_REFUSED) {
+        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+        printf("%s\n", (buf + 1));
+    } else
+        printf("Received roaming package, didn't want it though!\n");
 
     close(sock);
 }
 
 void RequestManager::RequestUDPTime() {
 
-    /* Create socket on which to send. */
-    sock = socket(PF_INET, SOCK_DGRAM, 0);
+    prepareSocket(PORT_UDP_TIME, SOCK_DGRAM, inet_addr("127.0.0.1"));
 
-    if (sock == -1) {
-        puts("opening datagram socket");
-        exit(1);
+    sendMessage(sock, 1, "");
+
+    if (receiveMessage() < 0) {
+        puts("Error: receiving data");
+        close(sock);
+        return;
     }
-    setTimeout(sock, 3, 0);
 
-    memset(&service, 0, sizeof(service));
-    fillSockaddr_in(service, AF_INET, inet_addr("127.0.0.1"), PORT_UDP_TIME);
-
-    bzero(buf, 1024);
-    memcpy(buf + 1, "UDPEcho: Lorem Ipsum", sizeof("UDPEcho: Lorem Ipsum"));
-    if (sendto(sock, buf, sizeof buf, 0, (struct sockaddr *) &service, sizeof service) == -1)
-        puts("sending datagram message");
-    //receive package from server
-    socklen_t len = sizeof(remote);
-    ssize_t n;
-
-    n = recvfrom(sock, buf, 1024, 0, (struct sockaddr *) &remote, &len);
-
-    if (n < 0)
-        puts("Error: receiving data from Sn");
-    else {
-        if (buf[0] == SERVICE_GRANTED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
-        } else if (buf[0] == SERVICE_REFUSED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            printf("%s\n", (buf + 1));
-        } else
-            printf("Received roaming package, didn't want it though!\n");
-    }
+    if (buf[0] == SERVICE_GRANTED) {
+        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+        printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
+    } else if (buf[0] == SERVICE_REFUSED) {
+        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+        printf("%s\n", (buf + 1));
+    } else
+        printf("Received roaming package, didn't want it though!\n");
 
     close(sock);
 }

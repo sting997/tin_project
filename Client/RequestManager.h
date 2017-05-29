@@ -6,23 +6,44 @@
 #define TIN_REQUESTMANAGER_H
 
 #include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <cstdlib>
+#include <unistd.h>
+#include <cstring>
+#include <arpa/inet.h>
+#include <ctime>
+#include <iostream>
+#include "../protocol_codes.h"
+#include "RequestManager.h"
+#include "config.h"
 
 class RequestManager {
     int sock;
-    struct sockaddr_in broadcastAddr;
-    struct sockaddr_in remote, service;
+    struct sockaddr_in remote, name;
+    static constexpr char * msgEndIndicator = (char *) "END";
     char buf[1024];
-    char req[2];
     socklen_t len;
-    ssize_t n;
 
-    int startTcpCon(char const *ip, uint16_t port);
+    void sendMessage(int sock, char code, std::string message);
+
+    ssize_t receiveMessage();
 
     void setTimeout(int socket, time_t tv_sec, long int tv_usec);
 
     void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
-    unsigned long checkIfEnd(char const *buf, char const *seq);
+    void prepareBroadcastSocket(int port);
+
+    void prepareSocket(unsigned short  port, int type, uint32_t netlong);
+
+    bool checkIfLastMsg();
+
+    void getUserInput();
+
+    unsigned long msgEndPosition();
 
 public:
     RequestManager();

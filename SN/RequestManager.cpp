@@ -56,9 +56,8 @@ void RequestManager::TCPEcho() {
         buf[0] = SERVICE_GRANTED;
 
         if (checkIfLastMsg()) {
-            write(connfd, buf, msgEndPos);
+            write(connfd, buf, msgEndPosition());
         } else {
-
             prepareFileName();
 
             saveTCPEcho();
@@ -82,7 +81,6 @@ ssize_t RequestManager::readOnTCP() {
         printf("Client has disconnected. Closing TCP service.\n");
         close(connfd);
     }
-    msgEndPos = msgEndPosition();
 
     return rval;
 }
@@ -119,7 +117,7 @@ unsigned long RequestManager::msgEndPosition() {
 }
 
 bool RequestManager::checkIfLastMsg() {
-    return msgEndPos != std::string::npos;
+    return msgEndPosition() != std::string::npos;
 }
 
 void RequestManager::prepareRefuseBuffer(int errNum) {
@@ -161,9 +159,8 @@ void RequestManager::saveTCPEcho() {
 
             _exit(0);
         }
-
         if (checkIfLastMsg()) {
-            fwrite(buf, sizeof(char), msgEndPos, pFile);
+            fwrite(buf, sizeof(char), msgEndPosition(), pFile);
             break;
         } else
             fwrite(buf, sizeof(char), strlen(buf), pFile);

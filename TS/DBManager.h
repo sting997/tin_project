@@ -14,19 +14,19 @@
 #include <sstream>
 #include <regex>
 #include "config.h"
-
+using namespace std;
 
 class DBManager {
-    bool doesLineExist(std::string file_name, std::regex select);
+    bool doesLineExist(string file_name, regex select);
 
-    std::string getDBLine(std::string file_name, std::regex select);
+    string getDBLine(string file_name, regex select);
 
 public:
-    bool isUserInDB(std::string username, std::string password);
+    bool isUserInDB(string username, string password);
 
-    bool canIPPerformService(std::string IP, std::string server_name, std::string service_name, std::string username);
+    bool canIPPerformService(string IP, string server_name, string service_name, string username);
 
-    std::string getTicketTimeValidityLine(std::string server_name, std::string service_name);
+    string getTicketTimeValidityLine(string server_name, string service_name);
 };
 
 

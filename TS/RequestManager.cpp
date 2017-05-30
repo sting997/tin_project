@@ -2,7 +2,6 @@
 // Created by monspid on 06.05.17.
 //
 #include "RequestManager.h"
-#include "DBManager.h"
 
 char RequestManager::getRequestCode() {
     return strlen(buf) > 0 ? buf[0] : ERROR;
@@ -17,48 +16,47 @@ void RequestManager::requestIP() {
 void RequestManager::requestTicket() {
     printf("Got a datagram from %s port %d\n", inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
 
-    std::string auth_data = getAuthData(buf);
-    std::vector<std::string> split_auth_data = getSplitData(auth_data);
+    string auth_data = getAuthData(buf);
+    vector<string> split_auth_data = getSplitData(auth_data);
 
     PrivilegeManager privilege_manager = PrivilegeManager();
 
     int privilege_status = privilege_manager.getPrivilegeInfo(inet_ntoa(remote.sin_addr), split_auth_data);
     char grant_status;
-    std::string message;
+    string message;
 
     if (privilege_status == 3) {
         grant_status = TS_GRANTED;
-        int ticket_time_validity = getTicketTimeValidity(split_auth_data); // add it to time.now()
+		time_t now = time(nullptr);
+        int ticket_time_validity = getTicketTimeValidity(split_auth_data) + now;
 
-		std::string unencryptedTicket = prepareTicketToEncryption(remote.sin_addr.s_addr,
+		string unencryptedTicket = prepareTicketToEncryption(inet_ntoa(remote.sin_addr),
 										split_auth_data[0], split_auth_data[1], ticket_time_validity);
         Ticket ticket;
         message = ticket.createTicket(unencryptedTicket);
-		std::cout<<message<<std::endl;
-		printf("%d\n", message.size());
     } else {
         grant_status = TS_REFUSED;
-        message = std::to_string(privilege_status);
+        message = to_string(privilege_status);
     }
 
     sendMessage(grant_status, message);
 }
 
-int RequestManager::getTicketTimeValidity(std::vector<std::string> split_auth_data) {
+int RequestManager::getTicketTimeValidity(vector<string> split_auth_data) {
     DBManager dbManager = DBManager();
 
-    std::string ticket_time_validity_line = dbManager.getTicketTimeValidityLine(split_auth_data[0], split_auth_data[1]);
-    std::vector<std::string> split_ticket_time_validity_line = getSplitData(ticket_time_validity_line);
+    string ticket_time_validity_line = dbManager.getTicketTimeValidityLine(split_auth_data[0], split_auth_data[1]);
+    vector<string> split_ticket_time_validity_line = getSplitData(ticket_time_validity_line);
 
     return split_ticket_time_validity_line.size() == 3 ? stoi(split_ticket_time_validity_line[2]) : 0;
 }
 
-void RequestManager::sendMessage(char code, std::string message) {
-    std::string response = code + message;
+void RequestManager::sendMessage(char code, string message) {
+    string response = code + message;
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &remote, len);
 }
 
-std::string RequestManager::getAuthData(std::string buf) {
+string RequestManager::getAuthData(string buf) {
     buf.erase(0, 1);
 
     return buf;
@@ -90,24 +88,20 @@ void RequestManager::listenForRequests() {
     }
 }
 
-std::vector<std::string> RequestManager::getSplitData(std::string data) {
-    std::vector<std::string> split_data;
+vector<string> RequestManager::getSplitData(string data) {
+    vector<string> split_data;
 
-    std::stringstream ss(data);
-    std::string token;
+    stringstream ss(data);
+    string token;
 
-    while (std::getline(ss, token, DELIMITER))
+    while (getline(ss, token, DELIMITER))
         split_data.push_back(token);
 
     return split_data;
 }
 
-//this function prepares a string ready to be used by a method from Ticket class
-//which encrypts the result of this function
+//this function prepares a string ready to be used by a method from Ticket class which encrypts given string
 //parameters - self explanatory
-std::string RequestManager::prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
-											std::string serviceNr, int ticketValidityTime){
-	std::string result = std::to_string(s_addr) + ";" + serverNr + ";"
-						+ serviceNr + ";"+ std::to_string(ticketValidityTime);
-	return result;
+string RequestManager::prepareTicketToEncryption(string ip, string serverNr, string serviceNr, int ticketValidityTime){
+	return ip + DELIMITER + serverNr + DELIMITER + serviceNr + DELIMITER + to_string(ticketValidityTime);
 }

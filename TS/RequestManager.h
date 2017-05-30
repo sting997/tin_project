@@ -10,6 +10,7 @@
 #include "../protocol_codes.h"
 #include "Ticket.h"
 #include "PrivilegeManager.h"
+#include "DBManager.h"
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -18,15 +19,17 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 class RequestManager {
     int sock;
     char buf[1024];
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
 
-    void sendMessage(char code, std::string message);
+    void sendMessage(char code, string message);
 
-    std::string getAuthData(std::string buf);
+    string getAuthData(string buf);
 
     char getRequestCode();
 
@@ -34,13 +37,11 @@ class RequestManager {
 
     void requestTicket();
 
-    std::vector<std::string> getSplitData(std::string data);
+    vector<string> getSplitData(string data);
 
+    int getTicketTimeValidity(vector<string> split_auth_data);
 
-    int getTicketTimeValidity(std::vector<std::string> split_auth_data);
-
-	std::string prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
-											std::string serviceNr, int ticketValidityTime);
+    string prepareTicketToEncryption(string ip, string serverNr, string serviceNr, int ticketValidityTime);
 
 public:
 

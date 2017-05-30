@@ -15,10 +15,8 @@ std::ostream &ConsoleMenu::display() {
 }
 
 bool ConsoleMenu::selection() {
-    if (std::cin >> option &&
-        std::find(values.begin(), values.end(), option) != values.end()) {
+    if (std::cin >> option && std::find(values.begin(), values.end(), option) != values.end())
         return true; // Good
-    }
 
     // cin's cleanup is ugly
     if (!std::cin.good()) {

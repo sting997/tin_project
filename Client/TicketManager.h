@@ -9,10 +9,10 @@
 #include <map>
 
 class TicketManager {
-	//this is a map containing all the ticket our client posessed
+	//this is a map containing all the tickets our client posessed
 	//the key is a pair of strings, where first - server, second - service
-	//which are assigned to the ticket
-	//the value in this map is the ticket himself
+	//these informations are assigned to the ticket
+	//the value in this map is the encrypted ticket himself
 	std::map<std::pair<std::string, std::string>, std::string> ticketMap;
 public:
 	TicketManager();

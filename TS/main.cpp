@@ -23,7 +23,7 @@ int main() {
     prepareSocket(udp, AF_INET, SOCK_DGRAM, 0, name);
 
     RequestManager requestManager = RequestManager(udp);
-    
+
     requestManager.listenForRequests();
 }
 

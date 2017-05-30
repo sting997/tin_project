@@ -5,40 +5,39 @@
 #include "DBManager.h"
 
 
-bool DBManager::isUserInDB(std::string username, std::string password) {
-    std::string file_name = "user.txt";
-    std::regex select(username + DELIMITER + password);
+bool DBManager::isUserInDB(string username, string password) {
+    string file_name = "user.txt";
+    regex select(username + DELIMITER + password);
 
     return doesLineExist(file_name, select);
 }
 
-bool DBManager::canIPPerformService(std::string IP, std::string server_name, std::string service_name,
-                                    std::string username) {
-    std::string file_name = "service.txt";
-    std::regex select(IP + DELIMITER + server_name + DELIMITER + service_name + DELIMITER + username);
+bool DBManager::canIPPerformService(string IP, string server_name, string service_name, string username) {
+    string file_name = "service.txt";
+    regex select(IP + DELIMITER + server_name + DELIMITER + service_name + DELIMITER + username);
 
     return doesLineExist(file_name, select);
 }
 
-bool DBManager::doesLineExist(std::string file_name, std::regex select) {
+bool DBManager::doesLineExist(string file_name, regex select) {
     return getDBLine(file_name, select) != "";
 }
 
-std::string DBManager::getTicketTimeValidityLine(std::string server_name, std::string service_name) {
-    std::string file_name = "time.txt";
-    std::regex select(server_name + DELIMITER + service_name);
+string DBManager::getTicketTimeValidityLine(string server_name, string service_name) {
+    string file_name = "time.txt";
+    regex select(server_name + DELIMITER + service_name);
 
     return getDBLine(file_name, select);
 }
 
-std::string DBManager::getDBLine(std::string file_name, std::regex select) {
-    std::ifstream inFile(file_name);
+string DBManager::getDBLine(string file_name, regex select) {
+    ifstream inFile(file_name);
 
-    std::string file_line;
-    std::string return_line = "";
+    string file_line;
+    string return_line = "";
 
     while (inFile >> file_line)
-        if (std::regex_search(file_line, select)) {
+        if (regex_search(file_line, select)) {
             return_line = file_line;
             break;
         }

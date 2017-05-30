@@ -90,6 +90,12 @@ void RequestManager::sendMessage(int sock, char code, std::string message) {
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
 }
 
+void RequestManager::sendTicket(int sock, std::string ticket, std::string message) {
+    std::string response = ticket;
+	printf("sending: %d\n", strlen(response.c_str()));
+    sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
+}
+
 void RequestManager::prepareBroadcastSocket(int port) {
     prepareSocket(port, SOCK_DGRAM, INADDR_ANY);
 
@@ -159,6 +165,8 @@ void RequestManager::RequestTicket() {
 
     if (buf[0] == TS_GRANTED) {
         printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
+		std::string tmp = buf+1;
+		std::cout<<tmp.size()<<std::endl;
 		//wanna hardcode war? here you go
 		std::string ticket = buf+1;
 		std::string jeden = "1";
@@ -182,8 +190,9 @@ void RequestManager::RequestUDPEcho() {
 	std::pair<std::string, std::string> ticketKey("1", "1");
 	std::string ticket = ticketManager.getTicket(ticketKey);
 	std::string message = ticket;//add +echoText
-    sendMessage(sock, 1, message);
-
+	std::cout<<message.size()<<std::endl;
+    //sendMessage(sock, 1, message);
+	sendTicket(sock, message, "");
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
         close(sock);

@@ -34,6 +34,8 @@ void RequestManager::requestTicket() {
 										split_auth_data[0], split_auth_data[1], ticket_time_validity);
         Ticket ticket;
         message = ticket.createTicket(unencryptedTicket);
+		std::cout<<message<<std::endl;
+		printf("%d\n", message.size());
     } else {
         grant_status = TS_REFUSED;
         message = std::to_string(privilege_status);

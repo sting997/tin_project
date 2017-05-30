@@ -48,6 +48,8 @@ class RequestManager {
 
     unsigned long msgEndPosition();
 
+	void sendTicket(int sock, std::string ticket, std::string message);
+
 public:
     RequestManager();
 

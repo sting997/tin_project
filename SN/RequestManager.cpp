@@ -11,7 +11,10 @@ void RequestManager::UDPEcho() {
 
     ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
     int ticket_correctness;
-
+	TicketDecryptor td;
+	std::string decryptedTicket = td.decryptTicket(buf);
+	//std::string decryptedTicket = buf;
+	std::cout<<decryptedTicket<<std::endl;
     if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
         buf[0] = SERVICE_GRANTED;
     else

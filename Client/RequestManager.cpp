@@ -159,6 +159,11 @@ void RequestManager::RequestTicket() {
 
     if (buf[0] == TS_GRANTED) {
         printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
+		//wanna hardcode war? here you go
+		std::string ticket = buf+1;
+		std::string jeden = "1";
+		std::pair<std::string, std::string> key(jeden, jeden);
+		ticketManager.addTicket(key, ticket);
     } else if (buf[0] == TS_REFUSED)
         printf("TS didn't give me a ticket, what a bitch!!!\n");
     else {
@@ -170,8 +175,14 @@ void RequestManager::RequestTicket() {
 void RequestManager::RequestUDPEcho() {
 
     prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
-
-    sendMessage(sock, 1, "UDPEcho: Lorem Ipsum");
+	
+	std::string echoText;
+	std::cout<<"Enter text: ";
+	std::cin>>echoText;
+	std::pair<std::string, std::string> ticketKey("1", "1");
+	std::string ticket = ticketManager.getTicket(ticketKey);
+	std::string message = ticket;//add +echoText
+    sendMessage(sock, 1, message);
 
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
@@ -183,6 +194,8 @@ void RequestManager::RequestUDPEcho() {
     if (buf[0] == SERVICE_GRANTED) {
         printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
         printf("%s\n", (buf + 1));
+		if(buf+1 == ticketManager.getTicket(ticketKey))
+			printf("No niezle\n");
     } else if (buf[0] == SERVICE_REFUSED) {
         printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
         printf("%s\n", (buf + 1));

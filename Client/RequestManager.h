@@ -19,6 +19,8 @@
 #include "../protocol_codes.h"
 #include "RequestManager.h"
 #include "config.h"
+#include "TicketManager.h"
+
 
 class RequestManager {
     int sock;
@@ -26,6 +28,7 @@ class RequestManager {
     static constexpr char * msgEndIndicator = (char *) "END";
     char buf[1024];
     socklen_t len;
+	TicketManager ticketManager;
 
     void sendMessage(int sock, char code, std::string message);
 

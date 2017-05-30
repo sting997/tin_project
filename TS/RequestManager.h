@@ -39,7 +39,7 @@ class RequestManager {
 
     int getTicketTimeValidity(std::vector<std::string> split_auth_data);
 
-	std::string prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
+	std::string prepareTicketToEncryption(std::string ip, std::string serverNr,
 											std::string serviceNr, int ticketValidityTime);
 
 public:

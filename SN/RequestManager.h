@@ -16,6 +16,8 @@
 #include <iostream>
 #include "TicketCorrectnessTester.h"
 #include "TicketDecryptor.h"
+#include <string>
+#include <sstream>
 
 #define BUFFER_SIZE 1024
 
@@ -53,6 +55,8 @@ class RequestManager {
     unsigned long msgEndPosition();
 
     bool checkIfLastMsg();
+
+	std::vector<std::string> getSplitData(std::string data);
 
 public:
     void requestEcho();

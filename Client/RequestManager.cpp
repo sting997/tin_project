@@ -90,9 +90,8 @@ void RequestManager::sendMessage(int sock, char code, std::string message) {
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
 }
 
-void RequestManager::sendTicket(int sock, std::string ticket, std::string message) {
-    std::string response = ticket;
-	printf("sending: %d\n", strlen(response.c_str()));
+void RequestManager::sendTicketAndMessage(int sock, std::string ticket, std::string message) {
+    std::string response = ticket + ";" + message;
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
 }
 
@@ -183,16 +182,16 @@ void RequestManager::RequestTicket() {
 void RequestManager::RequestUDPEcho() {
 
     prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
-	
+	std::string serverId;
+	std::cout<<"Enter Sn server id: ";
+	std::cin>>serverId;
 	std::string echoText;
 	std::cout<<"Enter text: ";
 	std::cin>>echoText;
-	std::pair<std::string, std::string> ticketKey("1", "1");
+	std::pair<std::string, std::string> ticketKey(serverId, "1"); //second parameter "1", because
+																//this is udp echo service id
 	std::string ticket = ticketManager.getTicket(ticketKey);
-	std::string message = ticket;//add +echoText
-	std::cout<<message.size()<<std::endl;
-    //sendMessage(sock, 1, message);
-	sendTicket(sock, message, "");
+	sendTicketAndMessage(sock, ticket, echoText);
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
         close(sock);
@@ -203,8 +202,6 @@ void RequestManager::RequestUDPEcho() {
     if (buf[0] == SERVICE_GRANTED) {
         printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
         printf("%s\n", (buf + 1));
-		if(buf+1 == ticketManager.getTicket(ticketKey))
-			printf("No niezle\n");
     } else if (buf[0] == SERVICE_REFUSED) {
         printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
         printf("%s\n", (buf + 1));

@@ -3,24 +3,26 @@
 //
 
 #include "RequestManager.h"
-
+#define DELIMITER ';'
 
 void RequestManager::UDPEcho() {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
-
+	bzero(buf, BUFFER_SIZE);
     ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+	std::vector<std::string> splitBuffer = getSplitData(buf);
+
     int ticket_correctness;
-	TicketDecryptor td;
-	std::string decryptedTicket = buf;
-	decryptedTicket = td.decryptTicket(decryptedTicket.substr(0, decryptedTicket.size()-2));//magic, don't change
-	std::cout<<decryptedTicket<<std::endl<<decryptedTicket.size()<<std::endl;
-    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
-        buf[0] = SERVICE_GRANTED;
+	TicketCorrectnessTester tester;
+    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(cliaddr.sin_addr), "1", "1")) == 0){
+		std::string preparedMessage = SERVICE_GRANTED + splitBuffer[1];
+		bzero(buf, BUFFER_SIZE);
+		memcpy(buf, preparedMessage.c_str(), strlen(preparedMessage.c_str()));
+	}
     else
         prepareRefuseBuffer(ticket_correctness);
 
-    sendto(sock, buf, (size_t) n, 0, (struct sockaddr *) &cliaddr, len);
+    sendto(sock, buf, strlen(buf), 0, (struct sockaddr *) &cliaddr, len);
 }
 
 void RequestManager::UDPTime() {
@@ -35,7 +37,7 @@ void RequestManager::UDPTime() {
     else
         prepareRefuseBuffer(ticket_correctness);
 
-    sendto(sock, buf, size_t(n), 0, (struct sockaddr *) &cliaddr, len);
+    sendto(sock, buf, strlen(buf), 0, (struct sockaddr *) &cliaddr, len);
 }
 
 void RequestManager::TCPEcho() {
@@ -143,7 +145,7 @@ void RequestManager::prepareRefuseBuffer(int errNum) {
             break;
     }
 
-    memcpy(buf + 1, message, sizeof(message));
+    memcpy(buf + 1, message, strlen(message));
 }
 
 void RequestManager::acceptConnection() {
@@ -205,4 +207,16 @@ void RequestManager::requestTime() {
 RequestManager::RequestManager(int socket, int connectionType = SOCK_DGRAM) {
     sock = socket;
     type = connectionType;
+}
+
+std::vector<std::string> RequestManager::getSplitData(std::string data) {
+    std::vector<std::string> split_data;
+
+    std::stringstream ss(data);
+    std::string token;
+
+    while (std::getline(ss, token, DELIMITER))
+        split_data.push_back(token);
+
+    return split_data;
 }

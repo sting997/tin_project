@@ -2,7 +2,6 @@
 // Created by monspid on 06.05.17.
 //
 
-#include <cstring>
 #include "TicketDecryptor.h"
 
 TicketDecryptor::TicketDecryptor() {

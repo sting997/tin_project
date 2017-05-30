@@ -28,14 +28,13 @@ void RequestManager::requestTicket() {
 
     if (privilege_status == 3) {
         grant_status = TS_GRANTED;
-        int ticket_time_validity = getTicketTimeValidity(split_auth_data); // add it to time.now()
+		time_t now = time(nullptr);
+        int ticket_time_validity = getTicketTimeValidity(split_auth_data) + now;
 
-		std::string unencryptedTicket = prepareTicketToEncryption(remote.sin_addr.s_addr,
+		std::string unencryptedTicket = prepareTicketToEncryption(inet_ntoa(remote.sin_addr),
 										split_auth_data[0], split_auth_data[1], ticket_time_validity);
         Ticket ticket;
         message = ticket.createTicket(unencryptedTicket);
-		std::cout<<message<<std::endl;
-		printf("%d\n", message.size());
     } else {
         grant_status = TS_REFUSED;
         message = std::to_string(privilege_status);
@@ -105,9 +104,9 @@ std::vector<std::string> RequestManager::getSplitData(std::string data) {
 //this function prepares a string ready to be used by a method from Ticket class
 //which encrypts the result of this function
 //parameters - self explanatory
-std::string RequestManager::prepareTicketToEncryption(unsigned long s_addr, std::string serverNr,
+std::string RequestManager::prepareTicketToEncryption(std::string ip, std::string serverNr,
 											std::string serviceNr, int ticketValidityTime){
-	std::string result = std::to_string(s_addr) + ";" + serverNr + ";"
+	std::string result = ip + ";" + serverNr + ";"
 						+ serviceNr + ";"+ std::to_string(ticketValidityTime);
 	return result;
 }

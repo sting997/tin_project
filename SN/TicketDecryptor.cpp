@@ -9,7 +9,7 @@ TicketDecryptor::TicketDecryptor() {
     memset(iv, 0x00, (size_t) CryptoPP::AES::BLOCKSIZE);
 }
 
-std::string TicketDecryptor::decryptTicket(std::string ticket) {
+std::string TicketDecryptor::decryptTicket(std::string ticket){
     std::string ciphertext = ticket;
     std::string decryptedtext;
 

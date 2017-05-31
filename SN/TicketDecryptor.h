@@ -15,7 +15,6 @@ class TicketDecryptor {
 
 public:
     TicketDecryptor();
-
     std::string decryptTicket(std::string ticket);
 };
 

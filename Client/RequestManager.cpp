@@ -207,7 +207,7 @@ void RequestManager::RequestTicket() {
         printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
 
     } else if (buf[0] == TS_REFUSED)
-        printf("TS didn't give me a ticket, what a bitch!!!\n");
+        printf("TS didn't give me a ticket!!!\n");
     else {
         printf("Received roaming package, didn't want it though!\n");
     }
@@ -258,23 +258,27 @@ void RequestManager::RequestUDPEcho() {
     prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
 	std::pair<std::string, std::string> ticketKey(serverId, "1"); //second parameter "1", because
 																//this is udp echo service id
-	std::string ticket = ticketManager.getTicket(ticketKey);
-	sendTicketAndMessage(sock, ticket, echoText);
+    if (ticketManager.contains(ticketKey)){
+        std::string ticket = ticketManager.getTicket(ticketKey);
+        sendTicketAndMessage(sock, ticket, echoText);
+        if (receiveMessage() < 0) {
+            puts("Error: receiving data");
+            close(sock);
+            return;
+        }
 
-    if (receiveMessage() < 0) {
-        puts("Error: receiving data");
-        close(sock);
-        return;
+        if (buf[0] == SERVICE_GRANTED) {
+            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+            printf("%s\n", (buf + 1));
+        } else if (buf[0] == SERVICE_REFUSED) {
+            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+            printf("%s\n", (buf + 1));
+        } else
+            printf("Received roaming package, didn't want it though!\n");
     }
-
-    if (buf[0] == SERVICE_GRANTED) {
-        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-        printf("%s\n", (buf + 1));
-    } else if (buf[0] == SERVICE_REFUSED) {
-        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-        printf("%s\n", (buf + 1));
-    } else
-        printf("Received roaming package, didn't want it though!\n");
+    else{
+        std::cout<<"You do not possess a valid ticket!\nGet one and try again.\n";
+    }
 
     close(sock);
 }

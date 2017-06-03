@@ -26,11 +26,13 @@ class RequestManager {
     int sock;
     struct sockaddr_in remote, name;
     static constexpr char * msgEndIndicator = (char *) "END";
-	std::pair<std::string, std::string> _userTicketInput;
-	std::pair<std::string, std::string> _userEchoInput;
+	std::string serverIP, serverID, serviceID;
+	std::string echoData;
     char buf[1024];
     socklen_t len;
 	TicketManager ticketManager;
+	std::string login = "admin";
+	std::string passwd = "admin";
 
     void sendMessage(int sock, char code, std::string message);
 
@@ -54,14 +56,18 @@ class RequestManager {
 
 	bool userTicketInput();
 
-	bool userEchoInput();
+	void userEchoInput();
+
+	bool userServAddrInput();
+
+	bool isIPAddr(std::string ipAddr);
 
 	void sendTicketAndMessage(int sock, std::string ticket, std::string message);
 
 public:
     RequestManager();
 
-    void RequestIP();
+    bool RequestIP();
 
     void RequestTicket();
 

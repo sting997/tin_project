@@ -18,24 +18,25 @@ int main(int argc, char *argv[]) {
     RequestManager requestManager;
     ConsoleMenu menu;
 
-    std::function<void()> action[8];
-    action[0] = std::bind(&RequestManager::RequestIP, &requestManager);
-    action[1] = std::bind(&RequestManager::RequestTicket, &requestManager);
-    action[2] = std::bind(&RequestManager::RequestUDPEcho, &requestManager);
-    action[3] = std::bind(&RequestManager::RequestUDPTime, &requestManager);
-    action[4] = std::bind(&RequestManager::RequestTCPEcho, &requestManager);
-    action[5] = std::bind(&RequestManager::RequestTCPTime, &requestManager);
-    action[6] = std::bind(&RequestManager::RequestNewData, &requestManager);
-    action[7] = std::bind(exitClient);
+    std::function<void()> action[7];
+    action[0] = std::bind(&RequestManager::RequestTicket, &requestManager);
+    action[1] = std::bind(&RequestManager::RequestUDPEcho, &requestManager);
+    action[2] = std::bind(&RequestManager::RequestUDPTime, &requestManager);
+    action[3] = std::bind(&RequestManager::RequestTCPEcho, &requestManager);
+    action[4] = std::bind(&RequestManager::RequestTCPTime, &requestManager);
+    action[5] = std::bind(&RequestManager::RequestNewData, &requestManager);
+    action[6] = std::bind(exitClient);
 
-    menu.add(1, "1) Request IP with broadcast message");
-    menu.add(2, "2) Get ticket from TS service");
-    menu.add(3, "3) Request UDP ECHO service");
-    menu.add(4, "4) Request UDP TIME service");
-    menu.add(5, "5) Request TCP ECHO service");
-    menu.add(6, "6) Request TCP TIME service");
-    menu.add(7, "7) Enter new user data");
-    menu.add(8, "8) Exit");
+    menu.add(1, "1) Get ticket from TS service");
+    menu.add(2, "2) Request UDP ECHO service");
+    menu.add(3, "3) Request UDP TIME service");
+    menu.add(4, "4) Request TCP ECHO service");
+    menu.add(5, "5) Request TCP TIME service");
+    menu.add(6, "6) Enter new user data");
+    menu.add(7, "7) Exit");
+
+    if(!requestManager.RequestIP())
+        exit(0);
 
     while (1) {
         menu.display();

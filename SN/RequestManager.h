@@ -26,7 +26,7 @@ class RequestManager {
     int type;
     char buf[BUFFER_SIZE];
     char fileName[8];
-    static constexpr char * msgEndIndicator = (char *) "END";
+    static constexpr char *msgEndIndicator = (char *) "END";
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
 
@@ -44,11 +44,9 @@ class RequestManager {
 
     void prepareRefuseBuffer(int errNum);
 
-    void prepareTimeBuffer();
+    void generateFileName();
 
-    void prepareFileName();
-
-    void saveTCPEcho();
+    void writeTCPEchoToFile();
 
     void sendTCPEcho();
 
@@ -56,7 +54,7 @@ class RequestManager {
 
     bool checkIfLastMsg();
 
-	std::vector<std::string> getSplitData(std::string data);
+    std::vector<std::string> getSplitData(std::string data);
 
 public:
     void requestEcho();
@@ -65,6 +63,7 @@ public:
 
     RequestManager(int socket, int connectionType);
 
+    void prepareBuffer(char flag, std::string message);
 };
 
 

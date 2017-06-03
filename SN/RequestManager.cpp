@@ -3,23 +3,20 @@
 //
 
 #include "RequestManager.h"
-#define DELIMITER ';'
 
 void RequestManager::UDPEcho() {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
-	bzero(buf, BUFFER_SIZE);
-    ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
-	std::vector<std::string> splitBuffer = getSplitData(buf);
-
     int ticket_correctness;
-	TicketCorrectnessTester tester;
-    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(cliaddr.sin_addr), "1", "1")) == 0){
-		std::string preparedMessage = SERVICE_GRANTED + splitBuffer[1];
-		bzero(buf, BUFFER_SIZE);
-		memcpy(buf, preparedMessage.c_str(), strlen(preparedMessage.c_str()));
-	}
-    else
+
+    recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+
+    std::vector<std::string> splitBuffer = getSplitData(buf);
+
+    TicketCorrectnessTester tester;
+    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(cliaddr.sin_addr), "1", "1")) == TICKET_CORRECT) {
+        prepareBuffer(SERVICE_GRANTED, splitBuffer[1]);
+    } else
         prepareRefuseBuffer(ticket_correctness);
 
     sendto(sock, buf, strlen(buf), 0, (struct sockaddr *) &cliaddr, len);
@@ -28,13 +25,14 @@ void RequestManager::UDPEcho() {
 void RequestManager::UDPTime() {
     struct sockaddr_in cliaddr;
     socklen_t len = sizeof(cliaddr);
-
-    ssize_t n = recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
     int ticket_correctness;
 
-    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
-        prepareTimeBuffer();
-    else
+    recvfrom(sock, buf, BUFFER_SIZE, 0, (struct sockaddr *) &cliaddr, &len);
+
+    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == TICKET_CORRECT) {
+        time_t current_time = time(nullptr);
+        prepareBuffer(SERVICE_GRANTED, ctime(&current_time));
+    } else
         prepareRefuseBuffer(ticket_correctness);
 
     sendto(sock, buf, strlen(buf), 0, (struct sockaddr *) &cliaddr, len);
@@ -48,10 +46,10 @@ void RequestManager::TCPEcho() {
     if (fork() == 0) {
         close(sock);
 
-        if(readOnTCP() <= 0)
+        if (readOnTCP() <= 0)
             return;
 
-        if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) != 0) {
+        if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) != TICKET_CORRECT) {
             prepareRefuseBuffer(ticket_correctness);
 
             write(connfd, buf, strlen(buf));
@@ -63,9 +61,9 @@ void RequestManager::TCPEcho() {
         if (checkIfLastMsg()) {
             write(connfd, buf, msgEndPosition());
         } else {
-            prepareFileName();
+            generateFileName();
 
-            saveTCPEcho();
+            writeTCPEchoToFile();
             sendTCPEcho();
 
             remove(fileName);
@@ -82,7 +80,7 @@ ssize_t RequestManager::readOnTCP() {
     if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1) {
         perror("Reading stream message:");
         close(connfd);
-    } else if (rval == 0){
+    } else if (rval == 0) {
         printf("Client has disconnected. Closing TCP service.\n");
         close(connfd);
     }
@@ -95,25 +93,19 @@ void RequestManager::TCPTime() {
 
     acceptConnection();
 
-    if(readOnTCP() <= 0)
+    if (readOnTCP() <= 0)
         return;
 
-    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == 0)
-        prepareTimeBuffer();
-    else
+    if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) == TICKET_CORRECT) {
+        time_t current_time = time(nullptr);
+        prepareBuffer(SERVICE_GRANTED, ctime(&current_time));
+    } else
         prepareRefuseBuffer(ticket_correctness);
 
     write(connfd, buf, strlen(buf));
     close(connfd);
 }
 
-void RequestManager::prepareTimeBuffer() {
-    bzero(buf, BUFFER_SIZE);
-    buf[0] = SERVICE_GRANTED;
-
-    time_t result = time(nullptr);
-    memcpy(buf + 1, &result, sizeof(&result));
-}
 
 unsigned long RequestManager::msgEndPosition() {
     std::string bufs(buf);
@@ -125,27 +117,31 @@ bool RequestManager::checkIfLastMsg() {
     return msgEndPosition() != std::string::npos;
 }
 
-void RequestManager::prepareRefuseBuffer(int errNum) {
-    char * message;
+
+void RequestManager::prepareBuffer(char flag, std::string message) {
     bzero(buf, BUFFER_SIZE);
-    buf[0] = SERVICE_REFUSED;
+    string preparedBuffer = flag + message;
+    memcpy(buf, preparedBuffer.c_str(), strlen(preparedBuffer.c_str()));
+}
+
+void RequestManager::prepareRefuseBuffer(int errNum) {
+    std::string message;
 
     switch (errNum) {
         case 1:
-            message = (char *) "Invalid Ticket";
+            message = "Invalid Ticket";
             break;
         case 2:
-            message = (char *) "Invalid IP address";
+            message = "Invalid IP address";
             break;
         case 3:
-            message = (char *) "Ticket has expired";
+            message = "Ticket has expired";
             break;
         default:
-            message = (char *) "Invalid data format";
+            message = "Invalid data format";
             break;
     }
-
-    memcpy(buf + 1, message, strlen(message));
+    prepareBuffer(SERVICE_REFUSED, message);
 }
 
 void RequestManager::acceptConnection() {
@@ -153,12 +149,12 @@ void RequestManager::acceptConnection() {
         perror("accept");
 }
 
-void RequestManager::saveTCPEcho() {
-    FILE* pFile = fopen(fileName, "w+");
+void RequestManager::writeTCPEchoToFile() {
+    FILE *pFile = fopen(fileName, "w+");
     fwrite(buf, sizeof(char), strlen(buf), pFile);
     do {
         bzero(buf, sizeof buf);
-        if(readOnTCP() <= 0) {
+        if (readOnTCP() <= 0) {
             fclose(pFile);
             remove(fileName);
 
@@ -175,7 +171,7 @@ void RequestManager::saveTCPEcho() {
 }
 
 void RequestManager::sendTCPEcho() {
-    FILE* pFile = fopen(fileName, "r");
+    FILE *pFile = fopen(fileName, "r");
     size_t charsread;
 
     do {
@@ -193,7 +189,7 @@ void RequestManager::requestEcho() {
         TCPEcho();
 }
 
-void RequestManager::prepareFileName() {
+void RequestManager::generateFileName() {
     sprintf(fileName, "%d", getpid());
 }
 
@@ -207,6 +203,7 @@ void RequestManager::requestTime() {
 RequestManager::RequestManager(int socket, int connectionType = SOCK_DGRAM) {
     sock = socket;
     type = connectionType;
+    bzero(buf, BUFFER_SIZE);
 }
 
 std::vector<std::string> RequestManager::getSplitData(std::string data) {

@@ -8,6 +8,7 @@
 #include "cryptopp/modes.h"
 #include "cryptopp/aes.h"
 #include "cryptopp/filters.h"
+#include <cryptopp/rijndael.h>
 
 class TicketDecryptor {
     byte key[CryptoPP::AES::DEFAULT_KEYLENGTH];

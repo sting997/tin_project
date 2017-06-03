@@ -84,7 +84,7 @@ void RequestManager::RequestTCPTime() {
     if (rval == 0) {
         printf("Service server disconnected.\n");
     } else {
-        printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
+        printf("%s\n", buf + 1);
     }
     close(sock);
 }
@@ -185,7 +185,7 @@ bool RequestManager::userTicketInput() {
     std::cin >> userInput;
     std::cout << std::endl;
 
-    if(!isNumeric(userInput))
+    if (!isNumeric(userInput))
         return false;
     serverID = userInput;
 
@@ -195,7 +195,7 @@ bool RequestManager::userTicketInput() {
     std::cin >> userInput;
     std::cout << std::endl;
 
-    if(!isNumeric(userInput))
+    if (!isNumeric(userInput))
         return false;
     serviceID = userInput;
 
@@ -204,7 +204,7 @@ bool RequestManager::userTicketInput() {
 
 void RequestManager::RequestTicket() {
     /* Create socket on which to send. */
-    if(!userTicketInput()) {
+    if (!userTicketInput()) {
         std::cout << "Invalid input." << std::endl;
         return;
     }
@@ -236,7 +236,7 @@ void RequestManager::RequestTicket() {
 }
 
 std::string RequestManager::GetTicketData() {
-    return buf+1;
+    return buf + 1;
 }
 
 void RequestManager::userEchoInput() {
@@ -275,13 +275,13 @@ bool RequestManager::userServAddrInput() {
 }
 
 bool RequestManager::isIPAddr(std::string ipAddr) {
-        struct sockaddr_in sa;
-        return inet_pton(AF_INET, ipAddr.c_str(), &(sa.sin_addr)) == 1;
+    struct sockaddr_in sa;
+    return inet_pton(AF_INET, ipAddr.c_str(), &(sa.sin_addr)) == 1;
 }
 
 void RequestManager::RequestUDPEcho() {
 
-    if(!userServAddrInput()) {
+    if (!userServAddrInput()) {
         std::cout << "Invalid input." << std::endl;
         return;
     }
@@ -289,9 +289,9 @@ void RequestManager::RequestUDPEcho() {
     userEchoInput();
 
     prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr(serverIP.c_str()));
-	std::pair<std::string, std::string> ticketKey(serverID, "1"); //second parameter "1", because
-																//this is udp echo service id
-    if (ticketManager.contains(ticketKey)){
+    std::pair<std::string, std::string> ticketKey(serverID, "1"); //second parameter "1", because
+    //this is udp echo service id
+    if (ticketManager.contains(ticketKey)) {
         std::string ticket = ticketManager.getTicket(ticketKey);
         sendTicketAndMessage(sock, ticket, echoData);
 
@@ -309,9 +309,8 @@ void RequestManager::RequestUDPEcho() {
             printf("%s\n", (buf + 1));
         } else
             printf("Received roaming package, didn't want it though!\n");
-    }
-    else{
-        std::cout<<"You do not possess a valid ticket!\nGet one and try again.\n";
+    } else {
+        std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";
     }
 
     close(sock);
@@ -319,7 +318,7 @@ void RequestManager::RequestUDPEcho() {
 
 void RequestManager::RequestUDPTime() {
 
-    if(!userServAddrInput()) {
+    if (!userServAddrInput()) {
         std::cout << "Invalid input." << std::endl;
         return;
     }
@@ -340,15 +339,14 @@ void RequestManager::RequestUDPTime() {
 
         if (buf[0] == SERVICE_GRANTED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-            printf("%s\n", std::asctime(std::localtime(reinterpret_cast<time_t *>(buf + 1))));
+            printf("%s\n", buf + 1);
         } else if (buf[0] == SERVICE_REFUSED) {
             printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
             printf("%s\n", (buf + 1));
         } else
             printf("Received roaming package, didn't want it though!\n");
-    }
-    else{
-        std::cout<<"You do not possess a valid ticket!\nGet one and try again.\n";
+    } else {
+        std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";
     }
 
     close(sock);

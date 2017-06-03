@@ -3,40 +3,51 @@
 //
 
 #include "TicketCorrectnessTester.h"
-#define DELIMITER ';'
 
 //method used to validate the ticket
-//returns: codes desribed in the method below
+//returns: codes described in the method below
 //arguments: ticket - encrypted ticket, senderIP - the ip from which the package was received
 //serverID - the id of the server Sn which performs the service == "my id" (this is the way the server "thinks" :)
-int TicketCorrectnessTester::checkTicket(std::string ticket, std::string senderIP, 
-										std::string serverID, std::string serviceID) {
-	try{
-		std::string decryptedTicket = decryptor.decryptTicket(ticket);
-		std::vector<std::string> splitTicketData = getSplitData(decryptedTicket);
-		time_t currentTime = time(nullptr);
-		if (splitTicketData[1] != serverID || splitTicketData[2] != serviceID)
-			return 1; //wrong ticket - it is supposed for another Sn or another service!
-		if (splitTicketData[0] != senderIP)
-			return 2; //the sender does not match owner or the ticket - stolen ticket? ;)
-		if (std::stoi(splitTicketData[3]) < currentTime)
-			return 3; //the validity period has passed
+int TicketCorrectnessTester::checkTicket(string ticket, string senderIP, string serverID, string serviceID) {
+    time_t currentTime = time(nullptr);
+    string decryptedTicket;
+    decryptedTicket = getDecryptedTicket(ticket);
+    vector<string> splitTicketData = getSplitData(decryptedTicket);
 
-		// 0 means ticket is correct
-		return 0;
-	}
-	catch(CryptoPP::InvalidCiphertext e){
-		return 4; //invalid data
-	}
+    if (splitTicketData.size() < 4)
+        return TICKET_INVALID;
+    if (splitTicketData[0] != senderIP)
+        return TICKET_WRONG_IP;
+    if (splitTicketData[1] != serverID || splitTicketData[2] != serviceID)
+        return TICKET_WRONG_SN;
+    if (stoi(splitTicketData[3]) < currentTime)
+        return TICKET_EXPIRED;
+
+    return TICKET_CORRECT;
+
 }
 
-std::vector<std::string> TicketCorrectnessTester::getSplitData(std::string data) {
-    std::vector<std::string> split_data;
+string TicketCorrectnessTester::getDecryptedTicket(string ticket) {
+    string decryptedTicket = "";
 
-    std::stringstream ss(data);
-    std::string token;
+    try {
+        decryptedTicket = decryptor.decryptTicket(ticket);
+    }
+    catch (CryptoPP::InvalidCiphertext e) {
+        perror("Invalid key");
+    }
 
-    while (std::getline(ss, token, DELIMITER))
+    return decryptedTicket;
+}
+
+
+vector<string> TicketCorrectnessTester::getSplitData(string data) {
+    vector<string> split_data;
+
+    stringstream ss(data);
+    string token;
+
+    while (getline(ss, token, DELIMITER))
         split_data.push_back(token);
 
     return split_data;

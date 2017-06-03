@@ -26,6 +26,8 @@ class RequestManager {
     int sock;
     struct sockaddr_in remote, name;
     static constexpr char * msgEndIndicator = (char *) "END";
+	std::pair<std::string, std::string> _userTicketInput;
+	std::pair<std::string, std::string> _userEchoInput;
     char buf[1024];
     socklen_t len;
 	TicketManager ticketManager;
@@ -47,6 +49,12 @@ class RequestManager {
     void getUserInput();
 
     unsigned long msgEndPosition();
+
+    std::string GetTicketData();
+
+	bool userTicketInput();
+
+	bool userEchoInput();
 
 	void sendTicketAndMessage(int sock, std::string ticket, std::string message);
 

@@ -150,11 +150,49 @@ void RequestManager::RequestIP() {
     close(sock);
 }
 
+bool RequestManager::userTicketInput() {
+    std::string serverId, serviceId;
+    std::string userInput;
+
+    try {
+        std::cout << "Input server ID: ";
+        std::cin >> userInput;
+        std::cout << std::endl;
+
+        serverId = std::stoi(userInput, nullptr);
+        userInput.clear();
+
+        std::cout << "Input service ID: ";
+        std::cin >> userInput;
+        std::cout << std::endl;
+
+        serverId = std::stoi(userInput, nullptr);
+        userInput.clear();
+    } catch(...) {
+        return false;
+    }
+
+    _userTicketInput.first = serverId;
+    _userTicketInput.second = serviceId;
+
+    return true;
+}
+
 void RequestManager::RequestTicket() {
     /* Create socket on which to send. */
+    if(!userTicketInput()) {
+        std::cout << "Invalid input." << std::endl;
+        return;
+    }
+
+    std::string serverId = _userTicketInput.first;
+    std::string serviceId = _userTicketInput.second;
+
     prepareSocket(TS_PORT, SOCK_DGRAM, remote.sin_addr.s_addr);
 
-    sendMessage(sock, TS_REQ_TICKET, "1;1;admin;admin");
+    std::string message = serverId + ";" + serviceId + "admin;admin";
+
+    sendMessage(sock, TS_REQ_TICKET, message);
 
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
@@ -163,14 +201,11 @@ void RequestManager::RequestTicket() {
     }
 
     if (buf[0] == TS_GRANTED) {
+        std::pair<std::string, std::string> key(serverId, serviceId);
+        ticketManager.addTicket(key, GetTicketData());
+
         printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
-		std::string tmp = buf+1;
-		std::cout<<tmp.size()<<std::endl;
-		//wanna hardcode war? here you go
-		std::string ticket = buf+1;
-		std::string jeden = "1";
-		std::pair<std::string, std::string> key(jeden, jeden);
-		ticketManager.addTicket(key, ticket);
+
     } else if (buf[0] == TS_REFUSED)
         printf("TS didn't give me a ticket, what a bitch!!!\n");
     else {
@@ -179,25 +214,58 @@ void RequestManager::RequestTicket() {
     close(sock);
 }
 
+std::string RequestManager::GetTicketData() {
+    return buf+1;
+}
+
+bool RequestManager::userEchoInput() {
+    std::string serverId, echoText;
+    std::string userInput;
+
+    try {
+        std::cout << "Input server ID: ";
+        std::cin >> userInput;
+        std::cout << std::endl;
+
+        serverId = std::stoi(userInput, nullptr);
+        userInput.clear();
+
+        std::cout << "Input data to be echoed: ";
+        std::cin >> echoText;
+        std::cout << std::endl;
+
+        userInput.clear();
+    } catch(...) {
+        return false;
+    }
+
+    _userEchoInput.first = serverId;
+    _userEchoInput.second = echoText;
+
+    return true;
+}
+
 void RequestManager::RequestUDPEcho() {
 
+    if(!userEchoInput()) {
+        std::cout << "Invalid input." << std::endl;
+        return;
+    }
+
+    std::string serverId = _userEchoInput.first;
+    std::string echoText = _userEchoInput.second;
+
     prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
-	std::string serverId;
-	std::cout<<"Enter Sn server id: ";
-	std::cin>>serverId;
-	std::string echoText;
-	std::cout<<"Enter text: ";
-	std::cin>>echoText;
 	std::pair<std::string, std::string> ticketKey(serverId, "1"); //second parameter "1", because
 																//this is udp echo service id
 	std::string ticket = ticketManager.getTicket(ticketKey);
 	sendTicketAndMessage(sock, ticket, echoText);
+
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
         close(sock);
         return;
     }
-
 
     if (buf[0] == SERVICE_GRANTED) {
         printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));

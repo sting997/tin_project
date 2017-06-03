@@ -4,7 +4,7 @@ project(sn)
 set(CMAKE_CXX_STANDARD 11)
 set(EXEC sn)
 
-set(GCC_COVERAGE_LINK_FLAGS "-lcryptopp -pthread")
+set(GCC_COVERAGE_LINK_FLAGS "-lcryptopp -pthread -llog4cpp")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}")
 set(SOURCE_FILES RequestManager.cpp RequestManager.h TicketCorrectnessTester.cpp TicketCorrectnessTester.h TicketDecryptor.cpp TicketDecryptor.h ../protocol_codes.h main.cpp config.h logger.properties)
 add_executable(${EXEC} ${SOURCE_FILES})

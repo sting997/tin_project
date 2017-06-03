@@ -25,7 +25,6 @@ class TicketCorrectnessTester {
     string getDecryptedTicket(string ticket);
 
 public:
-    static int CheckTicket(char *buf); //legacy method, has to be deleted after reimplementing Sn services!!!
     int checkTicket(string ticket, string senderIP, string serverID, string serviceID);
 
     vector<string> getSplitData(string data);

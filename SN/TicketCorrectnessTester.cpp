@@ -66,8 +66,3 @@ vector<string> TicketCorrectnessTester::getSplitData(string data) {
 
     return split_data;
 }
-
-//LEGACY METHOD, DELETE IT ASAP
-int TicketCorrectnessTester::CheckTicket(char *buf) {
-    return 0;
-}

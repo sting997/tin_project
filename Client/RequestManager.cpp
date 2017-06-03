@@ -46,17 +46,38 @@ void RequestManager::RequestTCPEcho() {
 
     ssize_t rval;
 
-    //keep communicating with server
-    log.info("To ECHO: ");
+    std::pair<std::string, std::string> ticketKey;
+    ticketKey.first = serverID;
+    ticketKey.second = "3";
 
-    while (true) {
-        getUserInput();
-        sendTCPEchoMessage();
+    if (ticketManager.contains(ticketKey)) {
+        std::string ticket = ticketManager.getTicket(ticketKey);
 
-        if (checkIfLastMsg())
-            break;
-    }
+        log.info("To ECHO: ");
 
+        while (true) {
+            getUserInput();
+            sendTicketAndMessage(sock, ticket, buf);
+
+            while (!checkIfLastMsg()) {
+                getUserInput();
+                sendTCPEchoMessage();
+            }
+
+            while (true) {
+                if ((rval = receiveMessage()) == -1) {
+                    log.error("Read failed:");
+                    exit(1);
+                }
+                if (rval == 0) {
+                    log.info("Ending connection.");
+                    break;
+                } else
+                    PrintMessage();
+            }
+        }
+    } else
+        std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";
     while (true) {
         if ((rval = receiveMessage()) == -1) {
             log.error("Read failed:");
@@ -72,7 +93,10 @@ void RequestManager::RequestTCPEcho() {
 }
 
 void RequestManager::sendTCPEchoMessage() {
-    sendMessage(sock, 1, buf.substr(0, std::min(buf.length(), msgEndPosition() + msgEndIndicator.length())));
+    if(checkIfLastMsg())
+        sendMessage(sock, 1, buf.substr(0, msgEndPosition() + msgEndIndicator.length()));
+    else
+        sendMessage(sock, 1, buf);
 }
 
 void RequestManager::RequestTCPTime() {
@@ -82,18 +106,29 @@ void RequestManager::RequestTCPTime() {
     }
 
     prepareSocket(PORT_TCP_TIME, SOCK_STREAM, inet_addr(serverIP.c_str()));
+
     ssize_t rval;
 
-    sendMessage(sock, 2, "PLS TCP TIME");
+    std::pair<std::string, std::string> ticketKey;
+    ticketKey.first = serverID;
+    ticketKey.second = "4";
 
-    if ((rval = receiveMessage()) == -1) {
-        log.error("Read failed:");
-        exit(1);
-    }
-    if (rval == 0) {
-        log.info("Service server disconnected.");
+    if (ticketManager.contains(ticketKey)) {
+        std::string ticket = ticketManager.getTicket(ticketKey);
+
+        sendTicketAndMessage(sock, ticket, "PL");
+
+        if ((rval = receiveMessage()) == -1) {
+            log.error("Read failed:");
+            exit(1);
+        }
+        if (rval == 0) {
+            log.info("Service server disconnected.");
+        } else {
+            PrintMessage();
+        }
     } else {
-        PrintMessage();
+        std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";
     }
     close(sock);
 }
@@ -325,7 +360,6 @@ void RequestManager::RequestUDPService(int serviceType) {
         } else if (buf[0] == SERVICE_REFUSED) {
             log.warn("Ticket Refused.");
             PrintMessage();
-
         } else
             log.warn("Received roaming package, didn't want it though!");
     } else {

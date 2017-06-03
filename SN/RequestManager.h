@@ -26,9 +26,10 @@ class RequestManager {
     log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
     int sock, connfd;
     int type;
-    char buf[BUFFER_SIZE];
-    char fileName[8];
-    static constexpr char *msgEndIndicator = (char *) "END";
+    const std::string serverID = "1";
+    std::string _message;
+    std::string fileName;
+    const std::string msgEndIndicator = "END";
     struct sockaddr_in remote, name;
     socklen_t len = sizeof(remote);
 
@@ -62,13 +63,15 @@ class RequestManager {
 
     void prepareBuffer(char flag, std::string message);
 
+    ssize_t receiveMessage();
+
 public:
     void requestEcho();
 
     void requestTime();
 
     RequestManager(int socket, int connectionType);
-    
+
 };
 
 

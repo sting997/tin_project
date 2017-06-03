@@ -17,5 +17,9 @@
 #define TIN_CONFIG_H
 #define LOGGER_CONFIG "logger.properties"
 #define LOGGER_NAME "log"
+#define UDP_ECHO_SERVICE "1"
+#define UDP_TIME_SERVICE "2"
+#define TCP_ECHO_SERVICE "3"
+#define TCP_TIME_SERVICE "4"
 
 #endif //TIN_CONFIG_H

@@ -27,7 +27,7 @@ class RequestManager {
     char buf[BUFFER_SIZE];
     char fileName[8];
     static constexpr char *msgEndIndicator = (char *) "END";
-    struct sockaddr_in remote;
+    struct sockaddr_in remote, name;
     socklen_t len = sizeof(remote);
 
     void TCPEcho();
@@ -42,13 +42,15 @@ class RequestManager {
 
     ssize_t readOnTCP();
 
+    void sendMessage(int sock, std::string message);
+
     void prepareRefuseBuffer(int errNum);
 
     void generateFileName();
 
     void writeTCPEchoToFile();
 
-    void sendTCPEcho();
+    void sendTCPEchoFromFile();
 
     unsigned long msgEndPosition();
 
@@ -56,14 +58,15 @@ class RequestManager {
 
     std::vector<std::string> getSplitData(std::string data);
 
+    void prepareBuffer(char flag, std::string message);
+
 public:
     void requestEcho();
 
     void requestTime();
 
     RequestManager(int socket, int connectionType);
-
-    void prepareBuffer(char flag, std::string message);
+    
 };
 
 

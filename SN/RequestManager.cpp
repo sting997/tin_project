@@ -38,6 +38,10 @@ void RequestManager::UDPTime() {
     sendto(sock, buf, strlen(buf), 0, (struct sockaddr *) &cliaddr, len);
 }
 
+void RequestManager::sendMessage(int sock, std::string message) {
+    sendto(sock, message.c_str(), strlen(message.c_str()), 0, (struct sockaddr *) &name, sizeof name);
+}
+
 void RequestManager::TCPEcho() {
     int ticket_correctness;
 
@@ -52,22 +56,17 @@ void RequestManager::TCPEcho() {
         if ((ticket_correctness = TicketCorrectnessTester::CheckTicket(buf)) != TICKET_CORRECT) {
             prepareRefuseBuffer(ticket_correctness);
 
-            write(connfd, buf, strlen(buf));
+            sendMessage(connfd, buf);
+
             _exit(0);
         }
 
-        buf[0] = SERVICE_GRANTED;
+        generateFileName();
 
-        if (checkIfLastMsg()) {
-            write(connfd, buf, msgEndPosition());
-        } else {
-            generateFileName();
+        writeTCPEchoToFile();
+        sendTCPEchoFromFile();
 
-            writeTCPEchoToFile();
-            sendTCPEcho();
-
-            remove(fileName);
-        }
+        //remove(fileName);
         _exit(0);
     }
     close(connfd);
@@ -84,7 +83,6 @@ ssize_t RequestManager::readOnTCP() {
         printf("Client has disconnected. Closing TCP service.\n");
         close(connfd);
     }
-
     return rval;
 }
 
@@ -151,9 +149,9 @@ void RequestManager::acceptConnection() {
 
 void RequestManager::writeTCPEchoToFile() {
     FILE *pFile = fopen(fileName, "w+");
-    fwrite(buf, sizeof(char), strlen(buf), pFile);
-    do {
-        bzero(buf, sizeof buf);
+    fwrite(buf + 1, sizeof(char), std::min(strlen(buf), msgEndPosition()) - 1, pFile);
+    while (!checkIfLastMsg()){
+        bzero(buf, 1024);
         if (readOnTCP() <= 0) {
             fclose(pFile);
             remove(fileName);
@@ -161,24 +159,25 @@ void RequestManager::writeTCPEchoToFile() {
             _exit(0);
         }
         if (checkIfLastMsg()) {
-            fwrite(buf, sizeof(char), msgEndPosition(), pFile);
+            fwrite(buf + 1, sizeof(char), msgEndPosition() - 1, pFile);
             break;
         } else
-            fwrite(buf, sizeof(char), strlen(buf), pFile);
-    } while (true);
-
+            fwrite(buf + 1, sizeof(char), strlen(buf) - 1, pFile);
+    };
     fclose(pFile);
 }
 
-void RequestManager::sendTCPEcho() {
+void RequestManager::sendTCPEchoFromFile() {
     FILE *pFile = fopen(fileName, "r");
+    char temp[1024];
     size_t charsread;
-
     do {
-        charsread = fread(buf, sizeof(char), BUFFER_SIZE, pFile);
-        write(connfd, buf, charsread);
+        charsread = fread(temp, sizeof(char), BUFFER_SIZE, pFile);
+        fprintf(stderr,"11%s",buf);
+        prepareBuffer(SERVICE_GRANTED, temp);
+        fprintf(stderr,"22%s",buf);
+        sendMessage(connfd, buf);
     } while (charsread == BUFFER_SIZE);
-
     fclose(pFile);
 }
 

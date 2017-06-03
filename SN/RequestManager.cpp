@@ -16,6 +16,7 @@ void RequestManager::UDPEcho() {
     TicketCorrectnessTester tester;
     if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(cliaddr.sin_addr), "1", "1")) == TICKET_CORRECT) {
         prepareBuffer(SERVICE_GRANTED, splitBuffer[1]);
+
     } else
         prepareRefuseBuffer(ticket_correctness);
 
@@ -77,10 +78,10 @@ ssize_t RequestManager::readOnTCP() {
     bzero(buf, BUFFER_SIZE);
 
     if ((rval = read(connfd, buf, BUFFER_SIZE)) == -1) {
-        perror("Reading stream message:");
+        log.error("Reading stream message:");
         close(connfd);
     } else if (rval == 0) {
-        printf("Client has disconnected. Closing TCP service.\n");
+        log.info("Client has disconnected. Closing TCP service.");
         close(connfd);
     }
     return rval;
@@ -104,7 +105,6 @@ void RequestManager::TCPTime() {
     close(connfd);
 }
 
-
 unsigned long RequestManager::msgEndPosition() {
     std::string bufs(buf);
 
@@ -114,7 +114,6 @@ unsigned long RequestManager::msgEndPosition() {
 bool RequestManager::checkIfLastMsg() {
     return msgEndPosition() != std::string::npos;
 }
-
 
 void RequestManager::prepareBuffer(char flag, std::string message) {
     bzero(buf, BUFFER_SIZE);
@@ -144,12 +143,13 @@ void RequestManager::prepareRefuseBuffer(int errNum) {
 
 void RequestManager::acceptConnection() {
     if ((connfd = accept(sock, (struct sockaddr *) &remote, &len)) == -1)
-        perror("accept");
+        log.error("Socket was not accepted");
 }
 
 void RequestManager::writeTCPEchoToFile() {
     FILE *pFile = fopen(fileName, "w+");
     fwrite(buf + 1, sizeof(char), std::min(strlen(buf), msgEndPosition()) - 1, pFile);
+
     while (!checkIfLastMsg()){
         bzero(buf, 1024);
         if (readOnTCP() <= 0) {
@@ -181,15 +181,15 @@ void RequestManager::sendTCPEchoFromFile() {
     fclose(pFile);
 }
 
+void RequestManager::generateFileName() {
+    sprintf(fileName, "%d", getpid());
+}
+
 void RequestManager::requestEcho() {
     if (type == SOCK_DGRAM)
         UDPEcho();
     else
         TCPEcho();
-}
-
-void RequestManager::generateFileName() {
-    sprintf(fileName, "%d", getpid());
 }
 
 void RequestManager::requestTime() {

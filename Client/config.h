@@ -9,5 +9,7 @@
 #define PORT_TCP_TIME 9400
 #define UDP_ECHO_SERVICE 1
 #define UDP_TIME_SERVICE 2
+#define LOGGER_CONFIG "logger.properties"
+#define LOGGER_NAME "log"
 
 #endif

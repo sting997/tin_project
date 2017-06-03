@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <ctime>
 #include <iostream>
+#include <log4cpp/Category.hh>
 #include "../protocol_codes.h"
 #include "RequestManager.h"
 #include "config.h"
@@ -24,7 +25,8 @@
 
 
 class RequestManager {
-    int sock;
+	log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
+	int sock;
     struct sockaddr_in remote, name;
     const std::string msgEndIndicator = "END";
 	std::string serverIP, serverID, serviceID;

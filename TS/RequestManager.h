@@ -18,11 +18,13 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <string>
+#include <log4cpp/Category.hh>
 
 using namespace std;
 
 class RequestManager {
     int sock;
+    log4cpp::Category& log = log4cpp::Category::getInstance(LOGGER_NAME);
     char buf[1024];
     struct sockaddr_in remote;
     socklen_t len = sizeof(remote);
@@ -44,7 +46,6 @@ class RequestManager {
     string prepareTicketToEncryption(string ip, string serverNr, string serviceNr, int ticketValidityTime);
 
 public:
-
     void listenForRequests();
 
     RequestManager(int socket);

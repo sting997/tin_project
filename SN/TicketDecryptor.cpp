@@ -10,6 +10,7 @@ TicketDecryptor::TicketDecryptor() {
 }
 
 std::string TicketDecryptor::decryptTicket(std::string ticket){
+    log.info("Started decryption");
     std::string ciphertext = ticket;
     std::string decryptedtext;
 
@@ -19,5 +20,6 @@ std::string TicketDecryptor::decryptTicket(std::string ticket){
     CryptoPP::StreamTransformationFilter stfDecryptor(cbcDecryption, new CryptoPP::StringSink(decryptedtext));
     stfDecryptor.Put(reinterpret_cast<const unsigned char *>( ciphertext.c_str()), ciphertext.size());
     stfDecryptor.MessageEnd();
+    log.info("Finished decryption");
     return decryptedtext;
 }

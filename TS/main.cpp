@@ -5,16 +5,22 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <cstdlib>
 #include <arpa/inet.h>
 #include "RequestManager.h"
+#include <log4cpp/Category.hh>
+#include <log4cpp/PropertyConfigurator.hh>
 
 void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_in name);
 
 void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
+log4cpp::Category& log = log4cpp::Category::getInstance(LOGGER_NAME);
+
 int main() {
+    log4cpp::PropertyConfigurator::configure(LOGGER_CONFIG);
+    log.info("<=== STARTED LISTENING ===>");
+
     int udp;
     fd_set rset;
     struct sockaddr_in name;
@@ -38,19 +44,19 @@ void prepareSocket(int &fd, int domain, int type, int protocol, struct sockaddr_
     fd = socket(domain, type, protocol);
 
     if (fd == -1) {
-        perror("opening datagram socket");
+        log.error("opening datagram socket");
         exit(1);
     }
 
     if (bind(fd, (struct sockaddr *) &name, len) == -1) {
-        perror("binding datagram socket");
+        log.error("binding datagram socket");
         exit(1);
     }
 
     if (getsockname(fd, (struct sockaddr *) &name, &len) == -1) {
-        perror("getting socket name");
+        log.error("getting socket name");
         exit(1);
     }
 
-    printf("TS listens on port %d\n", ntohs(name.sin_port));
+    log.info("TS listens on port %d", ntohs(name.sin_port));
 }

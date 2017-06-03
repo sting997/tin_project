@@ -10,6 +10,7 @@
 #include <sstream>
 #include <vector>
 #include <cstring>
+#include <log4cpp/Category.hh>
 #include "cryptopp/modes.h"
 #include "cryptopp/aes.h"
 #include "cryptopp/filters.h"
@@ -18,6 +19,7 @@
 using namespace std;
 
 class TicketCorrectnessTester {
+    log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
     TicketDecryptor decryptor;
 
     string getDecryptedTicket(string ticket);

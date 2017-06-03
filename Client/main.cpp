@@ -4,6 +4,7 @@
 #include <cstring>
 #include <ctime>
 #include <iostream>
+#include <log4cpp/PropertyConfigurator.hh>
 #include "../SN/TicketDecryptor.h"//only for debug
 
 #include "RequestManager.h"
@@ -14,9 +15,17 @@ void exitClient() {
     exit(0);
 };
 
-int main(int argc, char *argv[]) {
+log4cpp::Category& log = log4cpp::Category::getInstance(LOGGER_NAME);
+
+int main() {
+    log4cpp::PropertyConfigurator::configure(LOGGER_CONFIG);
+    log.info("<=== STARTED LISTENING ===>");
+
     RequestManager requestManager;
     ConsoleMenu menu;
+
+    if(!requestManager.RequestIP())
+        exit(0);
 
     std::function<void()> action[7];
     action[0] = std::bind(&RequestManager::RequestTicket, &requestManager);
@@ -35,8 +44,7 @@ int main(int argc, char *argv[]) {
     menu.add(6, "6) Enter new user data");
     menu.add(7, "7) Exit");
 
-    if(!requestManager.RequestIP())
-        exit(0);
+    log.info("Menu created");
 
     while (1) {
         menu.display();

@@ -1,20 +1,22 @@
 //
 // Created by monspid on 06.05.17.
 //
+
 #include "RequestManager.h"
 
 char RequestManager::getRequestCode() {
-    return strlen(buf) > 0 ? buf[0] : ERROR;
+    return strlen(buf) > 0 ? buf[0] : ERR;
 }
 
 void RequestManager::requestIP() {
-    printf("Got a datagram from %s port %d\n", inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
+    log.info("Got a datagram from %s port %d", inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
 
     sendMessage(TS_IP, "");
+    log.info("Send IP");
 }
 
 void RequestManager::requestTicket() {
-    printf("Got a datagram from %s port %d\n", inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
+    log.info("Got a datagram from %s port %d", inet_ntoa(remote.sin_addr), ntohs(remote.sin_port));
 
     string auth_data = getAuthData(buf);
     vector<string> split_auth_data = getSplitData(auth_data);
@@ -25,7 +27,8 @@ void RequestManager::requestTicket() {
     char grant_status;
     string message;
 
-    if (privilege_status == 3) {
+    if (privilege_status == AUTH_CORRECT) {
+        log.info("Authentication accepted");
         grant_status = TS_GRANTED;
 		time_t now = time(nullptr);
         int ticket_time_validity = getTicketTimeValidity(split_auth_data) + now;
@@ -37,9 +40,11 @@ void RequestManager::requestTicket() {
     } else {
         grant_status = TS_REFUSED;
         message = to_string(privilege_status);
+        log.info("Authentication refused");
     }
 
     sendMessage(grant_status, message);
+    log.info("Send status %c with message %s", grant_status, message.c_str());
 }
 
 int RequestManager::getTicketTimeValidity(vector<string> split_auth_data) {
@@ -75,15 +80,17 @@ void RequestManager::listenForRequests() {
 
         switch (getRequestCode()) {
             case TS_REQ_IP:
+                log.info("IP Requested");
                 requestIP();
                 break;
 
             case TS_REQ_TICKET:
+                log.info("Ticket Requested");
                 requestTicket();
                 break;
 
             default:
-                sendMessage(ERROR, "Invalid code format.");
+                sendMessage(ERR, "Invalid code format.");
         };
     }
 }

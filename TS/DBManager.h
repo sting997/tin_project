@@ -13,10 +13,12 @@
 #include <algorithm>
 #include <sstream>
 #include <regex>
+#include <log4cpp/Category.hh>
 #include "config.h"
 using namespace std;
 
 class DBManager {
+    log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
     bool doesLineExist(string file_name, regex select);
 
     string getDBLine(string file_name, regex select);

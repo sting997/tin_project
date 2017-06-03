@@ -18,10 +18,12 @@
 #include "TicketDecryptor.h"
 #include <string>
 #include <sstream>
+#include <log4cpp/Category.hh>
 
 #define BUFFER_SIZE 1024
 
 class RequestManager {
+    log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
     int sock, connfd;
     int type;
     char buf[BUFFER_SIZE];

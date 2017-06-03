@@ -15,5 +15,7 @@
 #define TICKET_EXPIRED 3
 #define TICKET_INVALID 4
 #define TIN_CONFIG_H
+#define LOGGER_CONFIG "logger.properties"
+#define LOGGER_NAME "log"
 
 #endif //TIN_CONFIG_H

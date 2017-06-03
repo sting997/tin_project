@@ -44,5 +44,6 @@ string DBManager::getDBLine(string file_name, regex select) {
 
     inFile.close();
 
+    log.info("Returned: %s", return_line.c_str());
     return return_line;
 }

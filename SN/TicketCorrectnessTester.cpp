@@ -14,15 +14,28 @@ int TicketCorrectnessTester::checkTicket(string ticket, string senderIP, string 
     decryptedTicket = getDecryptedTicket(ticket);
     vector<string> splitTicketData = getSplitData(decryptedTicket);
 
-    if (splitTicketData.size() < 4)
+    if (splitTicketData.size() < 4) {
+        log.info("Ticket %s invalid", ticket.c_str());
         return TICKET_INVALID;
-    if (splitTicketData[0] != senderIP)
+    }
+    if (splitTicketData[0] != senderIP) {
+        log.info("Ticket wrong IP. Got %s. Expected %s", splitTicketData[0].c_str(), senderIP.c_str());
         return TICKET_WRONG_IP;
-    if (splitTicketData[1] != serverID || splitTicketData[2] != serviceID)
-        return TICKET_WRONG_SN;
-    if (stoi(splitTicketData[3]) < currentTime)
-        return TICKET_EXPIRED;
+    }
 
+    if (splitTicketData[1] != serverID || splitTicketData[2] != serviceID) {
+        log.info(
+                "Ticket wrong Server or Service. Got <%s %s>. Expected <%s %s>",
+                splitTicketData[1].c_str(), splitTicketData[2].c_str(), serverID, serverID
+        );
+        return TICKET_WRONG_SN;
+    }
+    if (stoi(splitTicketData[3]) < currentTime) {
+        log.info("Ticket expired. Got %s. Expected value greater than %d", splitTicketData[3], currentTime);
+        return TICKET_EXPIRED;
+    }
+
+    log.info("Ticket %s is correct", ticket);
     return TICKET_CORRECT;
 
 }
@@ -32,9 +45,10 @@ string TicketCorrectnessTester::getDecryptedTicket(string ticket) {
 
     try {
         decryptedTicket = decryptor.decryptTicket(ticket);
+        log.info("Ticket decrypted");
     }
     catch (CryptoPP::InvalidCiphertext e) {
-        perror("Invalid key");
+        log.error("Invalid key");
     }
 
     return decryptedTicket;
@@ -54,6 +68,6 @@ vector<string> TicketCorrectnessTester::getSplitData(string data) {
 }
 
 //LEGACY METHOD, DELETE IT ASAP
-int TicketCorrectnessTester::CheckTicket(char *buf){
-	return 0;
+int TicketCorrectnessTester::CheckTicket(char *buf) {
+    return 0;
 }

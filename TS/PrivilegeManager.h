@@ -14,8 +14,11 @@
 #include <sstream>
 #include <regex>
 #include "config.h"
+#include <log4cpp/Category.hh>
 
 class PrivilegeManager {
+    log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
+
     bool isValidAuthData(std::vector<std::string> split_auth_data);
 
     bool isValidServerName(std::vector<std::string> split_auth_data);

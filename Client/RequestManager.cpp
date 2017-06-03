@@ -16,13 +16,11 @@ void RequestManager::userDataInput() {
     login.clear();
     std::cin >> login;
 
-    std::cout << std::endl;
-
     std::cout << "Input your password: ";
     passwd.clear();
     std::cin >> passwd;
 
-    std::cout << std::endl;
+
 }
 
 void RequestManager::getUserInput() {
@@ -49,7 +47,7 @@ void RequestManager::RequestTCPEcho() {
     ssize_t rval;
 
     //keep communicating with server
-    printf("To ECHO: ");
+    log.info("To ECHO: ");
 
     while (true) {
         getUserInput();
@@ -61,11 +59,11 @@ void RequestManager::RequestTCPEcho() {
 
     while (true) {
         if ((rval = receiveMessage()) == -1) {
-            perror("Read failed:");
+            log.error("Read failed:");
             exit(1);
         }
         if (rval == 0) {
-            printf("Ending connection.\n");
+            log.info("Ending connection.");
             break;
         } else
             PrintMessage();
@@ -79,7 +77,7 @@ void RequestManager::sendTCPEchoMessage() {
 
 void RequestManager::RequestTCPTime() {
     if (!userServAddrInput()) {
-        std::cout << "Invalid input." << std::endl;
+        log.warn("Invalid input.");
         return;
     }
 
@@ -89,11 +87,11 @@ void RequestManager::RequestTCPTime() {
     sendMessage(sock, 2, "PLS TCP TIME");
 
     if ((rval = receiveMessage()) == -1) {
-        perror("Read failed:");
+        log.error("Read failed:");
         exit(1);
     }
     if (rval == 0) {
-        printf("Service server disconnected.\n");
+        log.info("Service server disconnected.");
     } else {
         PrintMessage();
     }
@@ -120,7 +118,7 @@ void RequestManager::sendMessage(int sock, char code, std::string message) {
 }
 
 void RequestManager::sendTicketAndMessage(int sock, std::string ticket, std::string message) {
-    std::string response = ticket + ";" + message;
+    std::string response = ticket + DELIMITER + message;
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
 }
 
@@ -135,7 +133,7 @@ void RequestManager::prepareSocket(unsigned short port, int type, in_addr_t netl
     sock = socket(PF_INET, type, 0);
 
     if (sock == -1) {
-        puts("Opening datagram socket");
+        log.error("Opening datagram socket");
         return;
     }
 
@@ -145,19 +143,17 @@ void RequestManager::prepareSocket(unsigned short port, int type, in_addr_t netl
     fillSockaddr_in(name, AF_INET, netlong, port);
 
     if (type == SOCK_STREAM && connect(sock, (struct sockaddr *) &name, sizeof(name)) < 0) {
-        perror("Connect failed:");
+        log.error("Connect failed:");
     }
 }
 
 ssize_t RequestManager::receiveMessage() {
-    ssize_t n;
-
     char temp[1024];
     bzero(temp, 1024);
 
     len = sizeof(remote);
 
-    n = recvfrom(sock, temp, 1024, 0, (struct sockaddr *) &remote, &len);
+    ssize_t n = recvfrom(sock, temp, 1024, 0, (struct sockaddr *) &remote, &len);
 
     buf.clear();
     buf = temp;
@@ -170,15 +166,15 @@ bool RequestManager::RequestIP() {
 
     sendMessage(sock, TS_REQ_IP, "");
     if (receiveMessage() < 0) {
-        puts("Error: receiving IP from TS server.");
+        log.error("Receiving IP from TS server.");
         close(sock);
         return false;
     }
 
     if (buf[0] == TS_IP) {
-        printf("Received package from TS: %s\n", inet_ntoa(remote.sin_addr));
+        log.info("Received package from TS: %s", inet_ntoa(remote.sin_addr));
     } else {
-        printf("Error: receiving IP from TS server.\n");
+        log.error("receiving IP from TS server.");
         close(sock);
         return false;
     }
@@ -199,7 +195,6 @@ bool RequestManager::userTicketInput() {
 
     std::cout << "Input server ID: ";
     std::cin >> userInput;
-    std::cout << std::endl;
 
     if (!isNumeric(userInput))
         return false;
@@ -209,7 +204,6 @@ bool RequestManager::userTicketInput() {
 
     std::cout << "Input service ID: ";
     std::cin >> userInput;
-    std::cout << std::endl;
 
     if (!isNumeric(userInput))
         return false;
@@ -221,7 +215,7 @@ bool RequestManager::userTicketInput() {
 void RequestManager::RequestTicket() {
     /* Create socket on which to send. */
     if (!userTicketInput()) {
-        std::cout << "Invalid input." << std::endl;
+        log.warn("Invalid input.");
         return;
     }
 
@@ -232,7 +226,7 @@ void RequestManager::RequestTicket() {
     sendMessage(sock, TS_REQ_TICKET, message);
 
     if (receiveMessage() < 0) {
-        puts("Error: receiving data");
+        log.error("Receiving data");
         close(sock);
         return;
     }
@@ -241,12 +235,12 @@ void RequestManager::RequestTicket() {
         std::pair<std::string, std::string> key(serverID, serviceID);
         ticketManager.addTicket(key, GetTicketData());
 
-        printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
+        log.info("Received a ticket", buf);
 
     } else if (buf[0] == TS_REFUSED)
-        printf("TS didn't give me a ticket!!!\n");
+        log.warn("TS didn't give me a ticket!!!");
     else {
-        printf("Received roaming package, didn't want it though!\n");
+        log.warn("Received roaming package, didn't want it though!");
     }
     close(sock);
 }
@@ -260,7 +254,6 @@ void RequestManager::userEchoInput() {
 
     std::cout << "Input data to be echoed: ";
     std::cin >> userInput;
-    std::cout << std::endl;
 
     echoData = userInput;
 }
@@ -270,7 +263,6 @@ bool RequestManager::userServAddrInput() {
 
     std::cout << "Input server IP: ";
     std::cin >> userInput;
-    std::cout << std::endl;
 
     if (!isIPAddr(userInput))
         return false;
@@ -280,7 +272,6 @@ bool RequestManager::userServAddrInput() {
 
     std::cout << "Input server ID: ";
     std::cin >> userInput;
-    std::cout << std::endl;
 
     if (!isNumeric(userInput))
         return false;
@@ -297,7 +288,7 @@ bool RequestManager::isIPAddr(std::string ipAddr) {
 void RequestManager::RequestUDPService(int serviceType) {
 
     if (!userServAddrInput()) {
-        std::cout << "Invalid input." << std::endl;
+        log.warn("Invalid input.");
         return;
     }
 
@@ -317,27 +308,28 @@ void RequestManager::RequestUDPService(int serviceType) {
     if (ticketManager.contains(ticketKey)) {
         std::string ticket = ticketManager.getTicket(ticketKey);
 
-        if(serviceType == UDP_ECHO_SERVICE)
+        if (serviceType == UDP_ECHO_SERVICE)
             sendTicketAndMessage(sock, ticket, echoData);
-        if(serviceType == UDP_TIME_SERVICE)
+        if (serviceType == UDP_TIME_SERVICE)
             sendTicketAndMessage(sock, ticket, "");
 
         if (receiveMessage() < 0) {
-            puts("Error: receiving data");
+            log.error("Receiving data");
             close(sock);
             return;
         }
 
         if (buf[0] == SERVICE_GRANTED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+            log.info("Ticket Accepted.");
             PrintMessage();
         } else if (buf[0] == SERVICE_REFUSED) {
-            printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+            log.warn("Ticket Refused.");
             PrintMessage();
+
         } else
-            printf("Received roaming package, didn't want it though!\n");
+            log.warn("Received roaming package, didn't want it though!");
     } else {
-        std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";
+        log.warn("You do not have a valid ticket! Get one and try again.");
     }
 
     close(sock);

@@ -151,10 +151,18 @@ void RequestManager::RequestIP() {
 }
 
 void RequestManager::RequestTicket() {
-    /* Create socket on which to send. */
+	std::string user, passwd, server, service;
+	std::cout<<"Enter server: ";
+	std::cin>>server;
+	std::cout<<"Enter service: ";
+	std::cin>>service;
+	std::cout<<"Enter username: ";
+	std::cin>>user;
+	passwd = getpass("Enter password: ");
+    //change the argument remote.sin_saddr.s_addr below based on the server parameter above 
     prepareSocket(TS_PORT, SOCK_DGRAM, remote.sin_addr.s_addr);
-
-    sendMessage(sock, TS_REQ_TICKET, "1;1;admin;admin");
+	std::string message = server + ";" + service + ";" + user + ";" + passwd;
+    sendMessage(sock, TS_REQ_TICKET, message);
 
     if (receiveMessage() < 0) {
         puts("Error: receiving data");
@@ -164,15 +172,11 @@ void RequestManager::RequestTicket() {
 
     if (buf[0] == TS_GRANTED) {
         printf("I just received my ticket, whoooaaa!\n buf: %s\n", buf);
-		std::string tmp = buf+1;
-		std::cout<<tmp.size()<<std::endl;
-		//wanna hardcode war? here you go
 		std::string ticket = buf+1;
-		std::string jeden = "1";
-		std::pair<std::string, std::string> key(jeden, jeden);
+		std::pair<std::string, std::string> key(server, service);
 		ticketManager.addTicket(key, ticket);
     } else if (buf[0] == TS_REFUSED)
-        printf("TS didn't give me a ticket, what a bitch!!!\n");
+        printf("TS didn't give me a ticket!!!\n");
     else {
         printf("Received roaming package, didn't want it though!\n");
     }
@@ -180,33 +184,38 @@ void RequestManager::RequestTicket() {
 }
 
 void RequestManager::RequestUDPEcho() {
-
-    prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
 	std::string serverId;
 	std::cout<<"Enter Sn server id: ";
 	std::cin>>serverId;
 	std::string echoText;
 	std::cout<<"Enter text: ";
 	std::cin>>echoText;
+	//change the paraeter below
+    prepareSocket(PORT_UDP_ECHO, SOCK_DGRAM, inet_addr("127.0.0.1"));
+	
 	std::pair<std::string, std::string> ticketKey(serverId, "1"); //second parameter "1", because
 																//this is udp echo service id
-	std::string ticket = ticketManager.getTicket(ticketKey);
-	sendTicketAndMessage(sock, ticket, echoText);
-    if (receiveMessage() < 0) {
-        puts("Error: receiving data");
-        close(sock);
-        return;
-    }
+	if (ticketManager.contains(ticketKey)){
+		std::string ticket = ticketManager.getTicket(ticketKey);
+		sendTicketAndMessage(sock, ticket, echoText);
+		if (receiveMessage() < 0) {
+			puts("Error: receiving data");
+			close(sock);
+			return;
+		}
 
-
-    if (buf[0] == SERVICE_GRANTED) {
-        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-        printf("%s\n", (buf + 1));
-    } else if (buf[0] == SERVICE_REFUSED) {
-        printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
-        printf("%s\n", (buf + 1));
-    } else
-        printf("Received roaming package, didn't want it though!\n");
+		if (buf[0] == SERVICE_GRANTED) {
+			printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+			printf("%s\n", (buf + 1));
+		} else if (buf[0] == SERVICE_REFUSED) {
+			printf("Received package from service server: %s\n", inet_ntoa(remote.sin_addr));
+			printf("%s\n", (buf + 1));
+		} else
+			printf("Received roaming package, didn't want it though!\n");
+	}
+	else{
+		std::cout<<"You do not possess a valid ticket!\nGet one and try again.\n";
+	}
 
     close(sock);
 }

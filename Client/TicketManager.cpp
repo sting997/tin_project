@@ -22,6 +22,6 @@ void TicketManager::addTicket(std::pair<std::string, std::string> key, std::stri
 //instead of asking Ts for a ticket check with this method
 //if you have one previously saved
 bool TicketManager::contains(std::pair<std::string, std::string> key){
-	return ticketMap.find(key) == ticketMap.end();
+	return ticketMap.find(key) != ticketMap.end();
 }
 

@@ -15,6 +15,7 @@
 #include "cryptopp/aes.h"
 #include "cryptopp/filters.h"
 #include "config.h"
+#include <log4cpp/Category.hh>
 
 using namespace std;
 

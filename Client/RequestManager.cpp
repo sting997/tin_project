@@ -55,26 +55,24 @@ void RequestManager::RequestTCPEcho() {
 
         log.info("To ECHO: ");
 
-        while (true) {
+        getUserInput();
+        sendTicketAndMessage(sock, ticket, buf);
+
+        while (!checkIfLastMsg()) {
             getUserInput();
-            sendTicketAndMessage(sock, ticket, buf);
+            sendTCPEchoMessage();
+        }
 
-            while (!checkIfLastMsg()) {
-                getUserInput();
-                sendTCPEchoMessage();
+        while (true) {
+            if ((rval = receiveMessage()) == -1) {
+                log.error("Read failed:");
+                exit(1);
             }
-
-            while (true) {
-                if ((rval = receiveMessage()) == -1) {
-                    log.error("Read failed:");
-                    exit(1);
-                }
-                if (rval == 0) {
-                    log.info("Ending connection.");
-                    break;
-                } else
-                    PrintMessage();
-            }
+            if (rval == 0) {
+                log.info("Ending connection.");
+                break;
+            } else
+                PrintMessage();
         }
     } else
         std::cout << "You do not possess a valid ticket!\nGet one and try again.\n";

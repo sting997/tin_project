@@ -22,6 +22,7 @@
 #include "TicketManager.h"
 
 
+
 class RequestManager {
     int sock;
     struct sockaddr_in remote, name;
@@ -42,7 +43,7 @@ class RequestManager {
 
     void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t s_addr, unsigned short sin_port);
 
-    void prepareBroadcastSocket(int port);
+    void prepareBroadcastSocket(unsigned short port);
 
     void prepareSocket(unsigned short  port, int type, uint32_t netlong);
 
@@ -63,6 +64,8 @@ class RequestManager {
 	void userDataInput();
 
 	bool isIPAddr(std::string ipAddr);
+
+	void RequestUDPService(int serviceType);
 
 	void sendTicketAndMessage(int sock, std::string ticket, std::string message);
 

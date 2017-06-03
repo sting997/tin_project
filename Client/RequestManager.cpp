@@ -7,6 +7,24 @@
 RequestManager::RequestManager() {
 }
 
+void RequestManager::RequestNewData() {
+    userDataInput();
+}
+
+void RequestManager::userDataInput() {
+    std::cout << "Input your ID: ";
+    login.clear();
+    std::cin >> login;
+
+    std::cout << std::endl;
+
+    std::cout << "Input your password: ";
+    passwd.clear();
+    std::cin >> passwd;
+
+    std::cout << std::endl;
+}
+
 void RequestManager::getUserInput() {
     bzero(buf, 1024);
     //fflush(stdin);
@@ -180,7 +198,6 @@ bool RequestManager::userTicketInput() {
     if(!isNumeric(userInput))
         return false;
     serviceID = userInput;
-
 
     return true;
 }

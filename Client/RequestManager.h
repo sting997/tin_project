@@ -60,6 +60,8 @@ class RequestManager {
 
 	bool userServAddrInput();
 
+	void userDataInput();
+
 	bool isIPAddr(std::string ipAddr);
 
 	void sendTicketAndMessage(int sock, std::string ticket, std::string message);
@@ -79,7 +81,7 @@ public:
 
     void RequestTCPTime();
 
-    void RequestNewData() {};
+    void RequestNewData();
 };
 
 #endif //TIN_REQUESTMANAGER_H

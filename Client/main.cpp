@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iostream>
 #include <log4cpp/PropertyConfigurator.hh>
+#include <log4cpp/Category.hh>
 #include "../SN/TicketDecryptor.h"//only for debug
 
 #include "RequestManager.h"
@@ -15,7 +16,7 @@ void exitClient() {
     exit(0);
 };
 
-log4cpp::Category& log = log4cpp::Category::getInstance(LOGGER_NAME);
+log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
 
 int main() {
     log4cpp::PropertyConfigurator::configure(LOGGER_CONFIG);
@@ -24,7 +25,7 @@ int main() {
     RequestManager requestManager;
     ConsoleMenu menu;
 
-    if(!requestManager.RequestIP())
+    if (!requestManager.RequestIP())
         exit(0);
 
     std::function<void()> action[7];
@@ -36,13 +37,13 @@ int main() {
     action[5] = std::bind(&RequestManager::RequestNewData, &requestManager);
     action[6] = std::bind(exitClient);
 
-    menu.add(1, "1) Get ticket from TS service");
-    menu.add(2, "2) Request UDP ECHO service");
-    menu.add(3, "3) Request UDP TIME service");
-    menu.add(4, "4) Request TCP ECHO service");
-    menu.add(5, "5) Request TCP TIME service");
-    menu.add(6, "6) Enter new user data");
-    menu.add(7, "7) Exit");
+    menu.add(0, "0) Get ticket from TS service");
+    menu.add(1, "1) Request UDP ECHO service");
+    menu.add(2, "2) Request UDP TIME service");
+    menu.add(3, "3) Request TCP ECHO service");
+    menu.add(4, "4) Request TCP TIME service");
+    menu.add(5, "5) Enter new user data");
+    menu.add(6, "6) Exit");
 
     log.info("Menu created");
 
@@ -50,7 +51,7 @@ int main() {
         menu.display();
 
         if (menu.selection())
-            action[menu.opt() - 1]();
+            action[menu.opt()]();
         else
             std::cerr << "\nInvalid option\n" << std::endl;
     }

@@ -19,9 +19,16 @@ void fillSockaddr_in(struct sockaddr_in &name, sa_family_t sin_family, in_addr_t
 
 log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
 
-int main() {
+int main(int argc, char *argv[]) {
     log4cpp::PropertyConfigurator::configure(LOGGER_CONFIG);
     log.info("<=== STARTED LISTENING ===>");
+
+    if (argc < 2) {
+        log.error("No ID was given");
+        return -1;
+    }
+
+    std::string serverID = argv[1];
 
     int tcpEcho, tcpTime, udpEcho, udpTime, nready, maxfdp;
     fd_set rset;
@@ -53,25 +60,25 @@ int main() {
 
         if (FD_ISSET(tcpEcho, &rset)) {
             log.info("Got tcpEcho request");
-            RequestManager requestManager = RequestManager(tcpEcho, SOCK_STREAM);
+            RequestManager requestManager = RequestManager(serverID, tcpEcho, SOCK_STREAM);
             requestManager.requestEcho();
         }
 
         if (FD_ISSET(tcpTime, &rset)) {
             log.info("Got tcpTime request");
-            RequestManager requestManager = RequestManager(tcpTime, SOCK_STREAM);
+            RequestManager requestManager = RequestManager(serverID, tcpTime, SOCK_STREAM);
             requestManager.requestTime();
         }
 
         if (FD_ISSET(udpEcho, &rset)) {
             log.info("Got udpEcho request");
-            RequestManager requestManager = RequestManager(udpEcho, SOCK_DGRAM);
+            RequestManager requestManager = RequestManager(serverID, udpEcho, SOCK_DGRAM);
             requestManager.requestEcho();
         }
 
         if (FD_ISSET(udpTime, &rset)) {
             log.info("Got udpTime request");
-            RequestManager requestManager = RequestManager(udpTime, SOCK_DGRAM);
+            RequestManager requestManager = RequestManager(serverID, udpTime, SOCK_DGRAM);
             requestManager.requestTime();
         }
     }

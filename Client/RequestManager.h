@@ -34,8 +34,8 @@ class RequestManager {
     std::string buf;
     socklen_t len;
 	TicketManager ticketManager;
-	std::string login = "admin";
-	std::string passwd = "admin";
+	std::string login = LOGIN;
+	std::string passwd = PASS;
 
     void sendMessage(int sock, char code, std::string message);
 

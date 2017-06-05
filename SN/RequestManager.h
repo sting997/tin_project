@@ -26,7 +26,7 @@ class RequestManager {
     log4cpp::Category &log = log4cpp::Category::getInstance(LOGGER_NAME);
     int sock, connfd;
     int type;
-    const std::string serverID = "1";
+    std::string serverID;
     std::string _message;
     std::string fileName;
     const std::string msgEndIndicator = "END";
@@ -65,12 +65,16 @@ class RequestManager {
 
     ssize_t receiveMessage();
 
+    bool isNumeric(std::string input);
+
+    int ticketOK(std::vector<std::string> split_data, std::string service);
+
 public:
     void requestEcho();
 
     void requestTime();
 
-    RequestManager(int socket, int connectionType);
+    RequestManager(std::string srvrID, int socket, int connectionType);
 
 };
 

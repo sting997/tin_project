@@ -5,6 +5,7 @@
 #include "RequestManager.h"
 
 RequestManager::RequestManager() {
+
 }
 
 void RequestManager::RequestNewData() {
@@ -19,8 +20,6 @@ void RequestManager::userDataInput() {
     std::cout << "Input your password: ";
     passwd.clear();
     std::cin >> passwd;
-
-
 }
 
 void RequestManager::getUserInput() {
@@ -151,14 +150,17 @@ void RequestManager::sendMessage(int sock, char code, std::string message) {
 }
 
 void RequestManager::sendTicketAndMessage(int sock, std::string ticket, std::string message) {
-    std::string response = ticket + DELIMITER + message;
+    unsigned long ticket_size = ticket.size();
+    std::string response = std::to_string(ticket_size) + DELIMITER + ticket + message;
     sendto(sock, response.c_str(), strlen(response.c_str()), 0, (struct sockaddr *) &name, sizeof name);
 }
 
 void RequestManager::prepareBroadcastSocket(unsigned short port) {
-    prepareSocket(port, SOCK_DGRAM, INADDR_ANY);
+//    prepareSocket(port, SOCK_DGRAM, INADDR_BROADCAST);
+     prepareSocket(port, SOCK_DGRAM, INADDR_ANY);
 
     int val = 1;
+
     setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val));
 }
 
@@ -268,7 +270,7 @@ void RequestManager::RequestTicket() {
         std::pair<std::string, std::string> key(serverID, serviceID);
         ticketManager.addTicket(key, GetTicketData());
 
-        log.info("Received a ticket", buf);
+        log.info("Received a ticket %s", buf);
 
     } else if (buf[0] == TS_REFUSED)
         log.warn("TS didn't give me a ticket!!!");
@@ -286,9 +288,10 @@ void RequestManager::userEchoInput() {
     std::string userInput;
 
     std::cout << "Input data to be echoed: ";
-    std::cin >> userInput;
 
-    echoData = userInput;
+    echoData.clear();
+    while(echoData.length() == 0)
+        std::getline(std::cin, echoData);
 }
 
 bool RequestManager::userServAddrInput() {

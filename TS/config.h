@@ -5,7 +5,7 @@
 #ifndef TIN_CONFIG_H
 #define TIN_CONFIG_H
 
-#define TS_PORT 10000
+#define TS_PORT 9500
 #define AUTH_INVALID 0
 #define AUTH_WRONG_USERNAME 1
 #define AUTH_WRONG_IP 2

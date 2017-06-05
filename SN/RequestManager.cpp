@@ -8,14 +8,13 @@ void RequestManager::UDPEcho() {
     int ticket_correctness;
 
     if (receiveMessage() <= 0) {
-        perror("Read failed:");
+        log.error("Read failed:");
         return;
     }
 
     std::vector<std::string> splitBuffer = getSplitData(_message);
 
-    TicketCorrectnessTester tester;
-    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(remote.sin_addr), serverID, UDP_ECHO_SERVICE)) == TICKET_CORRECT)
+    if ((ticket_correctness = ticketOK(splitBuffer, UDP_ECHO_SERVICE)) == TICKET_CORRECT)
         prepareBuffer(SERVICE_GRANTED, splitBuffer[1]);
     else
         prepareRefuseBuffer(ticket_correctness);
@@ -27,14 +26,13 @@ void RequestManager::UDPTime() {
     int ticket_correctness;
 
     if (receiveMessage() <= 0) {
-        perror("Read failed:");
+        log.error("Read failed:");
         return;
     }
 
     std::vector<std::string> splitBuffer = getSplitData(_message);
 
-    TicketCorrectnessTester tester;
-    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(remote.sin_addr), serverID, UDP_TIME_SERVICE)) == TICKET_CORRECT){
+    if ((ticket_correctness = ticketOK(splitBuffer, UDP_TIME_SERVICE)) == TICKET_CORRECT){
         time_t current_time = time(nullptr);
         prepareBuffer(SERVICE_GRANTED, ctime(&current_time));
     } else
@@ -45,7 +43,7 @@ void RequestManager::UDPTime() {
 
 void RequestManager::sendMessage(int sock, std::string message) {
     if(sendto(sock, message.c_str(), message.length(), 0, (struct sockaddr *) &remote, sizeof remote) <= 0 ){
-        perror("Send Message:");
+        log.error("Send Message:");
     }
 }
 
@@ -59,13 +57,10 @@ void RequestManager::TCPEcho() {
 
         if (readOnTCP() <= 0)
             return;
-        std::cerr<<_message<<std::endl;
-
 
         std::vector<std::string> splitBuffer = getSplitData(_message);
 
-        TicketCorrectnessTester tester;
-        if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(remote.sin_addr), serverID, TCP_ECHO_SERVICE)) == TICKET_CORRECT)
+        if ((ticket_correctness = ticketOK(splitBuffer, TCP_ECHO_SERVICE)) == TICKET_CORRECT)
             prepareBuffer(SERVICE_GRANTED, splitBuffer[1]);
         else {
             prepareRefuseBuffer(ticket_correctness);
@@ -108,14 +103,13 @@ void RequestManager::TCPTime() {
 
     std::vector<std::string> splitBuffer = getSplitData(_message);
 
-    TicketCorrectnessTester tester;
-    if ((ticket_correctness = tester.checkTicket(splitBuffer[0], inet_ntoa(remote.sin_addr), serverID, TCP_TIME_SERVICE)) == TICKET_CORRECT){
+    if ((ticket_correctness = ticketOK(splitBuffer, TCP_TIME_SERVICE)) == TICKET_CORRECT){
         time_t current_time = time(nullptr);
         prepareBuffer(SERVICE_GRANTED, ctime(&current_time));
     } else
         prepareRefuseBuffer(ticket_correctness);
 
-    sendMessage(sock, _message);
+    sendMessage(connfd, _message);
 
     close(connfd);
 }
@@ -209,22 +203,40 @@ void RequestManager::requestTime() {
         TCPTime();
 }
 
-RequestManager::RequestManager(int socket, int connectionType = SOCK_DGRAM) {
+RequestManager::RequestManager(std::string srvrID, int socket, int connectionType = SOCK_DGRAM) {
     sock = socket;
     connfd = socket;
     type = connectionType;
+    serverID = srvrID;
 }
 
 std::vector<std::string> RequestManager::getSplitData(std::string data) {
     std::vector<std::string> split_data;
 
     std::stringstream ss(data);
-    std::string token;
+    std::string size_of_ticket;
+    std::string ticket_message;
 
-    while (std::getline(ss, token, DELIMITER))
-        split_data.push_back(token);
+    std::getline(ss, size_of_ticket, DELIMITER);
+
+    ticket_message = ss.str();
+    unsigned long begin_ticket = size_of_ticket.size() + 1;
+
+    if(isNumeric(size_of_ticket) and ticket_message.size() > begin_ticket and std::stoi(size_of_ticket) + begin_ticket <= ticket_message.size()){
+        std::string ticket = ticket_message.substr(begin_ticket, (unsigned int) stoi(size_of_ticket));
+        std::string message = ticket_message.substr(begin_ticket + (unsigned int) stoi(size_of_ticket), ticket_message.size());
+
+        split_data.push_back(ticket);
+        split_data.push_back(message);
+    }
 
     return split_data;
+}
+
+bool RequestManager::isNumeric(std::string input) {
+    size_t index = input.find_first_not_of("0123456789", 0);
+
+    return !input.empty() && index == std::string::npos;
 }
 
 ssize_t RequestManager::receiveMessage() {
@@ -241,4 +253,14 @@ ssize_t RequestManager::receiveMessage() {
     _message = temp;
 
     return n;
+}
+
+int RequestManager::ticketOK(std::vector<std::string> split_data, std::string service) {
+    TicketCorrectnessTester tester;
+    int ticket_correctness = 4;
+
+    if(split_data.size() == 2)
+        ticket_correctness = tester.checkTicket(split_data[0], inet_ntoa(remote.sin_addr), serverID, service);
+
+    return ticket_correctness;
 }

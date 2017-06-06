@@ -44,7 +44,7 @@ bool PrivilegeManager::isValidUsername(std::vector<std::string> split_auth_data)
 bool PrivilegeManager::isValidPassword(std::vector<std::string> split_auth_data) {
     size_t size = (split_auth_data[3]).size();
 
-    return size > 0 and size <= 16;
+    return size > 0 and size <= 100;
 }
 
 int PrivilegeManager::getStatusFromDB(std::string IP, std::vector<std::string> split_auth_data) {

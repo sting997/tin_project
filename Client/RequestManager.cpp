@@ -20,6 +20,7 @@ void RequestManager::userDataInput() {
     std::cout << "Input your password: ";
     passwd.clear();
     std::cin >> passwd;
+	passwd = calculateMD5(passwd);
 }
 
 void RequestManager::getUserInput() {
@@ -380,4 +381,18 @@ void RequestManager::RequestUDPEcho() {
 
 void RequestManager::RequestUDPTime() {
     RequestUDPService(UDP_TIME_SERVICE);
+}
+
+std::string RequestManager::calculateMD5(std::string message){
+	CryptoPP::MD5 hash;
+	byte digest[ CryptoPP::MD5::DIGESTSIZE ];
+
+	hash.CalculateDigest( digest, (byte*) message.c_str(), message.length() );
+
+	CryptoPP::HexEncoder encoder;
+	std::string output;
+	encoder.Attach( new CryptoPP::StringSink( output ) );
+	encoder.Put( digest, sizeof(digest) );
+	encoder.MessageEnd();
+	return output;
 }

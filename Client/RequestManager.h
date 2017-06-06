@@ -22,6 +22,11 @@
 #include "config.h"
 #include "TicketManager.h"
 
+#include "cryptopp/modes.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/md5.h"
+#include "cryptopp/filters.h"
+
 
 
 class RequestManager {
@@ -74,6 +79,8 @@ class RequestManager {
 	void PrintMessage();
 
 	void sendTCPEchoMessage();
+	
+	std::string calculateMD5(std::string message);
 
 public:
     RequestManager();

@@ -53,6 +53,6 @@ int main() {
         if (menu.selection())
             action[menu.opt()]();
         else
-            std::cerr << "\nInvalid option\n" << std::endl;
+            std::cout << "\nInvalid option\n" << std::endl;
     }
 }

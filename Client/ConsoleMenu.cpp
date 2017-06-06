@@ -10,15 +10,13 @@ std::ostream &ConsoleMenu::display() {
     while (it != options.end())
         std::cout << *it++ << '\n';
 
-    // Be sure to flush the stream
     return std::cout << msg << std::flush;
 }
 
 bool ConsoleMenu::selection() {
     if (std::cin >> option && std::find(values.begin(), values.end(), option) != values.end())
-        return true; // Good
+        return true;
 
-    // cin's cleanup is ugly
     if (!std::cin.good()) {
         std::cin.clear();
 
@@ -26,5 +24,5 @@ bool ConsoleMenu::selection() {
         while ((ch = std::cin.get()) != '\n' && ch != EOF);
     }
 
-    return false; // Bad
+    return false;
 }
